@@ -1,0 +1,54 @@
+package com.levelupgamer.products;
+
+import com.levelupgamer.products.dto.ProductoDTO;
+import jakarta.validation.Valid;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.*;
+import java.util.List;
+
+@RestController
+@RequestMapping("/api/products")
+public class ProductoController {
+    @Autowired
+    private ProductoService productoService;
+
+    @GetMapping
+    public ResponseEntity<List<ProductoDTO>> listarProductos() {
+        return ResponseEntity.ok(productoService.listarProductos());
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<ProductoDTO> getProducto(@PathVariable Long id) {
+        return productoService.buscarPorId(id)
+                .map(ProductoMapper::toDTO)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    @PreAuthorize("hasAnyRole('ADMINISTRADOR','VENDEDOR')")
+    @PostMapping
+    public ResponseEntity<ProductoDTO> crearProducto(@Valid @RequestBody Producto producto) {
+        return ResponseEntity.ok(productoService.crearProducto(producto));
+    }
+
+    @PreAuthorize("hasAnyRole('ADMINISTRADOR','VENDEDOR')")
+    @PutMapping("/{id}")
+    public ResponseEntity<ProductoDTO> actualizarProducto(@PathVariable Long id, @Valid @RequestBody Producto producto) {
+        return productoService.actualizarProducto(id, producto)
+                .map(ProductoMapper::toDTO)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    @PreAuthorize("hasRole('ADMINISTRADOR')")
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> eliminarProducto(@PathVariable Long id) {
+        if (productoService.eliminarProducto(id)) {
+            return ResponseEntity.noContent().build();
+        } else {
+            return ResponseEntity.notFound().build();
+        }
+    }
+}
