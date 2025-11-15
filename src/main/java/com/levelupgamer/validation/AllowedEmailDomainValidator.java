@@ -3,17 +3,16 @@ package com.levelupgamer.validation;
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
 import java.util.Arrays;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 @Component
 public class AllowedEmailDomainValidator implements ConstraintValidator<AllowedEmailDomain, String> {
 
-    @Value("${validation.allowed-email-domains}")
     private String[] allowedDomains;
 
     @Override
     public void initialize(AllowedEmailDomain constraintAnnotation) {
+        this.allowedDomains = constraintAnnotation.domains();
     }
 
     @Override

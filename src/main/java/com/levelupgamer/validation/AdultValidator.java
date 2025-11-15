@@ -6,15 +6,14 @@ import java.time.LocalDate;
 import java.time.Period;
 
 public class AdultValidator implements ConstraintValidator<Adult, LocalDate> {
-    @Override
-    public void initialize(Adult constraintAnnotation) {
-    }
+
+    private static final int MIN_AGE = 18;
 
     @Override
-    public boolean isValid(LocalDate date, ConstraintValidatorContext context) {
-        if (date == null) {
-            return true; // O false, dependiendo de si la fecha es obligatoria
+    public boolean isValid(LocalDate fechaNacimiento, ConstraintValidatorContext context) {
+        if (fechaNacimiento == null) {
+            return false;
         }
-        return Period.between(date, LocalDate.now()).getYears() >= 18;
+        return Period.between(fechaNacimiento, LocalDate.now()).getYears() >= MIN_AGE;
     }
 }

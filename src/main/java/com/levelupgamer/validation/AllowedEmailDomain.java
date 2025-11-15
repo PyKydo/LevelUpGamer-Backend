@@ -12,4 +12,6 @@ public @interface AllowedEmailDomain {
     String message() default "Dominio de correo no permitido";
     Class<?>[] groups() default {};
     Class<? extends Payload>[] payload() default {};
+
+    String[] domains();
 }

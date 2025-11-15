@@ -30,12 +30,12 @@ Backend para la tienda online LevelUpGamer, desarrollado como un monolito modula
 
 El backend está diseñado como un monolito modular. Cada dominio de negocio está encapsulado en su propio paquete, lo que facilita el mantenimiento y la posible migración a microservicios en el futuro.
 
-- `com.levelupgamer.auth`: Autenticación y seguridad.
-- `com.levelupgamer.users`: Gestión de usuarios.
-- `com.levelupgamer.products`: Gestión de productos y categorías.
-- `com.levelupgamer.orders`: Gestión de pedidos.
-- `com.levelupgamer.content`: Gestión de blogs y mensajes de contacto.
-- `com.levelupgamer.gamification`: Lógica de puntos y referidos.
+- `com.levelupgamer.autenticacion`: Autenticación y seguridad.
+- `com.levelupgamer.usuarios`: Gestión de usuarios.
+- `com.levelupgamer.productos`: Gestión de productos y categorías.
+- `com.levelupgamer.pedidos`: Gestión de pedidos.
+- `com.levelupgamer.contenido`: Gestión de blogs y mensajes de contacto.
+- `com.levelupgamer.gamificacion`: Lógica de puntos y referidos.
 - `com.levelupgamer.common`: Clases y servicios comunes (ej: EmailService).
 - `com.levelupgamer.config`: Clases de configuración (ej: AWS, validación).
 - `com.levelupgamer.exception`: Manejo de excepciones globales.

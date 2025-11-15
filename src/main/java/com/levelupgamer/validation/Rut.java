@@ -5,11 +5,11 @@ import jakarta.validation.Payload;
 import java.lang.annotation.*;
 
 @Documented
-@Constraint(validatedBy = AdultValidator.class)
-@Target({ElementType.FIELD, ElementType.PARAMETER})
+@Constraint(validatedBy = RutValidator.class)
+@Target({ElementType.METHOD, ElementType.FIELD})
 @Retention(RetentionPolicy.RUNTIME)
-public @interface Adult {
-    String message() default "El usuario debe ser mayor de 18 años";
+public @interface Rut {
+    String message() default "RUT inválido";
     Class<?>[] groups() default {};
     Class<? extends Payload>[] payload() default {};
 }
