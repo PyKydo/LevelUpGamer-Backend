@@ -1,0 +1,93 @@
+name: Despliegue de Backend (Build y Deploy)
+
+on:
+  push:
+    branches:
+      - main
+
+env:
+  JAR_NAME: app.jar
+  SERVICE_NAME: levelupgamer.service
+  EC2_TARGET_PATH: /var/www/backend/app.jar
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: 1. Compilar, Probar y Empaquetar
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Obtener el código
+        uses: actions/checkout@v4
+
+      - name: Configurar Java 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'openjdk'
+
+
+      - name: Cachear dependencias de Maven
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-
+
+      - name: Compilar y empaquetar con Maven
+        run: mvn -B clean package
+
+      - name: Renombrar artefacto
+        run: |
+          # Busca el JAR (ignorando el de 'original-') y lo renombra
+          JAR_FILE=$(find target -name "levelupgamer-backend-*.jar" -not -name "*-original.jar")
+          echo "Archivo JAR encontrado: $JAR_FILE"
+          mv "$JAR_FILE" target/${{ env.JAR_NAME }}
+
+      - name: Subir artefacto JAR
+        uses: actions/upload-artifact@v4
+        with:
+          name: java-backend-jar
+          path: target/${{ env.JAR_NAME }}
+
+  deploy:
+    name: 2. Desplegar en EC2
+    runs-on: ubuntu-latest
+    
+    needs: build
+
+    steps:
+      - name: Descargar artefacto JAR
+        uses: actions/download-artifact@v4
+        with:
+          name: java-backend-jar
+          path: .
+
+      - name: Copiar JAR a EC2 vía SCP
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          source: ${{ env.JAR_NAME }}
+          target: ${{ env.EC2_TARGET_PATH }}
+          strip_components: 1
+
+      - name: Reiniciar servicio Systemd en EC2
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            echo "Conectado a EC2. Reiniciando el servicio..."
+
+            sudo systemctl restart ${{ env.SERVICE_NAME }}
+            
+            echo "Verificando estado del servicio..."
+            sleep 5 # Darle unos segundos para que arranque
+            sudo systemctl status ${{ env.SERVICE_NAME }} --no-pager
