@@ -1,19 +1,20 @@
 package com.levelupgamer.contenido;
 
-import com.levelupgamer.common.service.EmailService;
 import com.levelupgamer.contenido.dto.ContactoDTO;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 
 @Service
 public class ContactoService {
-    private final ContactoRepository contactoRepository;
-    private final EmailService emailService;
 
-    public ContactoService(ContactoRepository contactoRepository, EmailService emailService) {
+    private static final Logger logger = LoggerFactory.getLogger(ContactoService.class);
+    private final ContactoRepository contactoRepository;
+
+    public ContactoService(ContactoRepository contactoRepository) {
         this.contactoRepository = contactoRepository;
-        this.emailService = emailService;
     }
 
     @Transactional
@@ -26,10 +27,8 @@ public class ContactoService {
                 .build();
         contacto = contactoRepository.save(contacto);
 
-        // Enviar correo de confirmación
-        String subject = "Gracias por contactarnos, " + dto.getNombre();
-        String body = "Hemos recibido tu mensaje y te responderemos a la brevedad.";
-        emailService.sendEmail(dto.getCorreo(), subject, body);
+        // La funcionalidad de envío de correo está desactivada.
+        logger.info("Mensaje de contacto guardado de [{}]. El envío de correo de confirmación está desactivado.", dto.getCorreo());
 
         return ContactoDTO.builder()
                 .id(contacto.getId())
@@ -40,4 +39,3 @@ public class ContactoService {
                 .build();
     }
 }
-
