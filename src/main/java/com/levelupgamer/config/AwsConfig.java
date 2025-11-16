@@ -1,16 +1,12 @@
 package com.levelupgamer.config;
 
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
-import software.amazon.awssdk.regions.Region;
-import software.amazon.awssdk.services.ses.SesClient;
 
 @Configuration
 public class AwsConfig {
 
-    @Value("${aws.region}")
-    private String awsRegion;
+    // Esta clase se mantiene como un placeholder para futuras configuraciones de AWS.
+    // Se ha eliminado la inyección de 'aws.region' que causaba fallos en los tests
+    // al no estar definida la propiedad en el perfil de 'test'.
 
 }
