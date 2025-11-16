@@ -69,10 +69,15 @@ class PuntosServiceTest {
         Usuario usuario = new Usuario();
         usuario.setId(usuarioId);
         PuntosDTO puntosDTO = new PuntosDTO(usuarioId, 50);
-        
+
         when(puntosRepository.findByUsuarioId(usuarioId)).thenReturn(Optional.empty());
         when(usuarioRepository.findById(usuarioId)).thenReturn(Optional.of(usuario)); // Comportamiento del mock
-        when(puntosRepository.save(any(Puntos.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        // Simulamos el comportamiento de JPA con @MapsId: al persistir, el usuarioId se iguala al id del usuario
+        when(puntosRepository.save(any(Puntos.class))).thenAnswer(invocation -> {
+            Puntos p = invocation.getArgument(0);
+            p.setUsuarioId(usuarioId);
+            return p;
+        });
 
         // When
         PuntosDTO result = puntosService.sumarPuntos(puntosDTO);

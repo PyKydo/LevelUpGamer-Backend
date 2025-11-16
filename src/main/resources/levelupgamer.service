@@ -1,0 +1,15 @@
+[Unit]
+Description=Servicio de Backend LevelUp Gamer
+After=network.target
+
+[Service]
+User=ec2-user
+WorkingDirectory=/var/www/backend
+EnvironmentFile=/etc/levelupgamer/environment.conf
+ExecStart=/usr/bin/java -jar /var/www/backend/app.jar
+SuccessExitStatus=143
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

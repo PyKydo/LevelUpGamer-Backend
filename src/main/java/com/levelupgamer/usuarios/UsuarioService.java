@@ -80,7 +80,7 @@ public class UsuarioService {
         roles.add(RolUsuario.CLIENTE);
         usuario.setRoles(roles);
         usuario.setActivo(true);
-        if (correo.endsWith("@duoc.cl") || correo.endsWith("@profesor.duoc.cl")) {
+        if (correo.endsWith("@duoc.cl") || correo.endsWith("@profesor.duoc.cl") || correo.endsWith("@duocuc.cl")) {
             usuario.setIsDuocUser(true);
         }
 

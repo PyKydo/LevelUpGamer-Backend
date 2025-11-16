@@ -1,29 +1,30 @@
 # LevelUpGamer Backend
 
-Backend para la tienda online LevelUpGamer, desarrollado como un monolito modular con Java 21 y Spring Boot. El proyecto gestiona usuarios, productos, pedidos, contenido y un programa de gamificación.
+Backend para la tienda online LevelUpGamer, desarrollado como un monolito modular con Java 21 y Spring Boot. El proyecto gestiona usuarios, productos, carritos de compra, pedidos, contenido y un programa de gamificación.
 
-## Características
+## Características Principales
 
-- **Gestión de Usuarios:** Registro, autenticación con JWT y roles (Admin, Vendedor, Cliente).
+- **Gestión de Usuarios:** Registro, autenticación con JWT y roles (Administrador, Cliente).
 - **Catálogo de Productos:** Administración de productos, categorías y control de stock.
-- **Sistema de Pedidos:** Creación y seguimiento de pedidos.
+- **Carrito de Compras:** Lógica para agregar, ver y modificar el contenido del carrito de un usuario.
+- **Sistema de Pedidos:** Creación y seguimiento de pedidos a partir del carrito.
 - **Gamificación:** Programa de puntos por compras y sistema de referidos.
 - **Descuentos:** Lógica de descuentos para usuarios con correos específicos (Duoc).
-- **Notificaciones:** Alertas de stock crítico y confirmaciones por correo electrónico (AWS SES).
+- **Notificaciones:** Alertas de stock crítico.
 - **Monitorización:** Endpoints de Actuator para supervisión de la salud y métricas de la aplicación.
 
 ## Tecnologías Utilizadas
 
 - **Lenguaje:** Java 21
-- **Framework:** Spring Boot 3.5.0
+- **Framework:** Spring Boot 3.x
 - **Base de Datos:**
-  - H2 (para desarrollo y pruebas)
-  - PostgreSQL (para producción)
+  - H2 (para perfil `dev`)
+  - PostgreSQL (para perfil `prod`)
 - **Seguridad:** Spring Security, JWT
 - **Documentación de API:** SpringDoc (OpenAPI/Swagger)
 - **Validación:** Spring Validation
-- **Mapeo de Objetos:** Lombok
-- **Envío de Correos:** AWS SES (Simple Email Service)
+- **Mapeo de Objetos:** Custom Mappers
+- **Servicios AWS:** S3 (para almacenamiento de archivos).
 - **Build Tool:** Maven
 
 ## Estructura del Proyecto
@@ -33,121 +34,89 @@ El backend está diseñado como un monolito modular. Cada dominio de negocio est
 - `com.levelupgamer.autenticacion`: Autenticación y seguridad.
 - `com.levelupgamer.usuarios`: Gestión de usuarios.
 - `com.levelupgamer.productos`: Gestión de productos y categorías.
-- `com.levelupgamer.pedidos`: Gestión de pedidos.
+- `com.levelupgamer.pedidos`: Gestión de carritos y pedidos.
 - `com.levelupgamer.contenido`: Gestión de blogs y mensajes de contacto.
 - `com.levelupgamer.gamificacion`: Lógica de puntos y referidos.
-- `com.levelupgamer.common`: Clases y servicios comunes (ej: EmailService).
-- `com.levelupgamer.config`: Clases de configuración (ej: AWS, validación).
+- `com.levelupgamer.common`: Clases y servicios comunes.
+- `com.levelupgamer.config`: Clases de configuración (ej: AWS, perfiles).
 - `com.levelupgamer.exception`: Manejo de excepciones globales.
-
-## Modelo de Entidades (ERD)
-
-A continuación se muestra una representación simple de las relaciones entre las entidades principales:
-
-```diagram
-[Usuario] 1--* [Pedido]
-[Pedido] 1--* [PedidoItem]
-[Producto] 1--* [PedidoItem]
-[Usuario] 1--1 [Puntos] (Opcional, dependiendo del diseño)
-```
-
-- **Usuario:** Almacena la información de los usuarios, incluyendo su rol y puntos.
-- **Producto:** Representa los artículos en venta.
-- **Pedido:** Contiene la información de una compra, incluyendo el usuario y el total.
-- **PedidoItem:** Tabla intermedia que almacena los productos y cantidades de un pedido.
-- **Blog:** Entradas del blog.
-- **Contacto:** Mensajes enviados desde el formulario de contacto.
-- **Puntos:** (Diseño actual desacoplado) Historial de puntos de un usuario.
 
 ## API Endpoints
 
 La API sigue un patrón RESTful. La URL base es `/api`.
 
 ### Autenticación (`/api/auth`)
-
 - `POST /login`: Inicia sesión y devuelve un token JWT.
 
 ### Usuarios (`/api/users`)
-
 - `POST /register`: Registra un nuevo usuario.
 - `GET /{id}`: Obtiene un usuario por su ID.
 - `PUT /{id}`: Actualiza el perfil de un usuario.
-- `GET /roles`: (Admin) Obtiene la lista de roles de usuario.
 
 ### Productos (`/api/products`)
-
-- `GET /`: Lista todos los productos con filtros opcionales.
+- `GET /`: Lista todos los productos.
 - `GET /{id}`: Obtiene un producto por su ID.
-- `POST /`: (Admin/Vendedor) Crea un nuevo producto.
-- `PUT /{id}`: (Admin/Vendedor) Actualiza un producto.
+- `POST /`: (Admin) Crea un nuevo producto.
+- `PUT /{id}`: (Admin) Actualiza un producto.
 - `DELETE /{id}`: (Admin) Elimina un producto.
 
-### Pedidos (`/api/orders`)
+### Carrito de Compras (`/api/cart`)
+- `GET /{userId}`: Obtiene el carrito de un usuario.
+- `POST /{userId}/add`: Agrega un producto al carrito.
+- `DELETE /{userId}/remove`: Elimina un producto del carrito.
 
-- `POST /`: Crea un nuevo pedido.
+### Pedidos (`/api/orders`)
+- `POST /`: Crea un nuevo pedido a partir del carrito.
 - `GET /user/{userId}`: Lista los pedidos de un usuario.
 - `GET /{id}`: Obtiene un pedido por su ID.
 
 ### Contenido (`/api/content`)
-
 - `GET /blog-posts`: Lista todas las entradas del blog.
-- `GET /blog-posts/{id}`: Obtiene una entrada del blog por su ID.
 - `POST /contact-messages`: Envía un mensaje de contacto.
+
+## Pruebas
+
+El proyecto incluye un conjunto de pruebas para garantizar la calidad y el correcto funcionamiento del código.
+
+### Pruebas Unitarias
+- **Ubicación:** `src/test/java`
+- **Descripción:** Se centran en probar unidades de código aisladas (ej: métodos de un servicio, mappers). Utilizan mocks (Mockito) para simular dependencias y asegurar que el componente bajo prueba funciona como se espera sin depender de otros sistemas como la base de datos.
+- **Ejecución:** Se ejecutan automáticamente con el comando `mvn clean install` o `mvn test`.
+
+### Pruebas de Integración / E2E
+- **Descripción:** Estas pruebas validan flujos completos de la aplicación, desde el endpoint de la API hasta la base de datos. Se utilizan para verificar que los diferentes módulos interactúan correctamente. Se configuran con la anotación `@SpringBootTest` y utilizan la base de datos en memoria H2 para no interferir con los datos de desarrollo o producción.
+- **Ejemplo:** Probar que al llamar a `POST /api/cart/{userId}/add`, el producto se añade correctamente a la base de datos y la respuesta de la API es la esperada.
 
 ## Configuración y Despliegue
 
-### Prerrequisitos
+La aplicación utiliza perfiles de Spring Boot para gestionar diferentes configuraciones de entorno.
 
-- Java 21
-- PostgreSQL
-- Cuenta de AWS con una instancia EC2 y un rol de IAM con permisos para SES.
+- **`application-dev.properties` (Perfil `dev`):** Configuración por defecto para desarrollo local. Utiliza una base de datos en memoria H2, lo que permite ejecutar la aplicación sin necesidad de configurar una base de datos externa.
+- **`application-prod.properties` (Perfil `prod`):** Configuración para el entorno de producción. Utiliza variables de entorno para datos sensibles.
 
-### Configuración de la Base de Datos
+### Variables de Entorno (Producción)
 
-1. Crea una base de datos PostgreSQL.
-2. Crea un usuario con permisos para acceder a la base de datos.
+Para desplegar en producción, es necesario configurar las siguientes variables de entorno en el servidor:
 
-### Configuración de la Aplicación
+| Variable          | Descripción                                           | Ejemplo                                                 |
+|-------------------|-------------------------------------------------------|---------------------------------------------------------|
+| `DB_URL`          | URL de conexión a la base de datos PostgreSQL.        | `jdbc:postgresql://host:port/db_name`                   |
+| `DB_USER`         | Usuario de la base de datos.                          | `admin`                                                 |
+| `DB_PASS`         | Contraseña de la base de datos.                       | `secret_password`                                       |
+| `S3_BUCKET_NAME`  | Nombre del bucket de AWS S3 para almacenar archivos.  | `levelupgamer-assets`                                   |
+| `AWS_ACCESS_KEY_ID` | Clave de acceso de IAM para AWS.                      | `AKIAIOSFODNN7EXAMPLE`                                  |
+| `AWS_SECRET_ACCESS_KEY` | Clave de acceso secreta de IAM para AWS.          | `wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY`              |
+| `JWT_SECRET`      | Clave secreta para firmar los tokens JWT.             | `una_clave_muy_larga_y_segura_para_produccion`          |
 
-La aplicación se configura mediante variables de entorno en producción.
+### Despliegue Automatizado con GitHub Actions
 
-- `DB_URL`: URL de conexión a PostgreSQL. (ej: `jdbc:postgresql://localhost:5432/levelupgamer`)
-- `DB_USERNAME`: Nombre de usuario de la base de datos.
-- `DB_PASSWORD`: Contraseña del usuario de la base de datos.
+El repositorio está configurado con un flujo de trabajo de GitHub Actions (`.github/workflows/despliegue-ec2.yml`) que automatiza el despliegue en una instancia EC2 de AWS.
 
-### Ejecución de la Aplicación
+El flujo de trabajo realiza los siguientes pasos:
+1.  Se activa al hacer un `push` a la rama `main`.
+2.  Construye el proyecto y ejecuta las pruebas.
+3.  Copia el archivo JAR resultante a la instancia EC2.
+4.  Copia el archivo de servicio `levelupgamer.service` a `/etc/systemd/system/` en el servidor.
+5.  Recarga `systemd`, reinicia el servicio de la aplicación y verifica su estado.
 
-1. **Construir la Aplicación:**
-
-    ```bash
-    ./mvnw clean install
-    ```
-
-2. **Copiar el Artefacto:**
-    Copia el archivo JAR generado (`target/levelupgamer-backend-1.0.0.jar`) a la instancia EC2.
-
-3. **Ejecutar la Aplicación:**
-    Ejecuta la aplicación con el perfil `prod` activado:
-
-    ```bash
-    java -jar levelupgamer-backend-1.0.0.jar --spring.profiles.active=prod
-    ```
-
-## Flujo de la Aplicación
-
-### Registro de Usuario con Referido
-
-1. Un usuario se registra a través del endpoint `POST /api/users/register`.
-2. Si se proporciona un `codigoReferido` válido, el sistema busca al usuario referente.
-3. Se le asignan puntos de gamificación al referente.
-4. El nuevo usuario se guarda en la base de datos.
-
-### Creación de un Pedido
-
-1. Un usuario autenticado realiza una solicitud a `POST /api/orders`.
-2. El sistema verifica el stock de los productos solicitados.
-3. Si el usuario tiene un correo Duoc (`isDuocUser = true`), se aplica un 20% de descuento.
-4. Se calcula el total del pedido y se actualiza el stock de los productos.
-5. Si el stock de un producto cae por debajo de su `stockCritico`, se emite una alerta en los logs.
-6. Se asignan puntos al usuario en función del monto total de la compra.
-7. El pedido se guarda en la base de datos.
+El archivo `levelupgamer.service` define cómo el sistema operativo debe gestionar el proceso de la aplicación, asegurando que se reinicie si falla.

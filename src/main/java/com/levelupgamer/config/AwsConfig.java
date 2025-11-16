@@ -13,11 +13,4 @@ public class AwsConfig {
     @Value("${aws.region}")
     private String awsRegion;
 
-    @Bean
-    public SesClient sesClient() {
-        return SesClient.builder()
-                .credentialsProvider(DefaultCredentialsProvider.create())
-                .region(Region.of(awsRegion))
-                .build();
-    }
 }
