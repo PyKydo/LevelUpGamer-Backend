@@ -8,8 +8,7 @@ on:
 env:
   JAR_NAME: app.jar
   SERVICE_NAME: levelupgamer.service
-  EC2_TARGET_PATH: /var/www/backend/app.jar
-
+  EC2_TARGET_PATH: /var/www/backend
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -75,8 +74,6 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           source: ${{ env.JAR_NAME }}
           target: ${{ env.EC2_TARGET_PATH }}
-          strip_components: 1
-
       - name: Reiniciar servicio Systemd en EC2
         uses: appleboy/ssh-action@v1.0.3
         with:
