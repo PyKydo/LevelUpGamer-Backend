@@ -1,14 +1,12 @@
 package com.levelupgamer.contenido;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.levelupgamer.common.service.EmailService;
 import com.levelupgamer.contenido.dto.ContactoDTO;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
@@ -16,8 +14,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.doNothing;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -38,9 +34,6 @@ class ContenidoE2ETest {
 
     @Autowired
     private BlogRepository blogRepository;
-
-    @MockBean
-    private EmailService emailService;
 
     @BeforeEach
     void setUp() {
@@ -69,9 +62,7 @@ class ContenidoE2ETest {
 
     @Test
     void deberiaEnviarMensajeDeContacto() throws Exception {
-        // Given: Configuramos el mock para que no haga nada
-        doNothing().when(emailService).sendEmail(anyString(), anyString(), anyString());
-        
+        // Given
         ContactoDTO contactoDTO = ContactoDTO.builder()
                 .nombre("Usuario de Contacto")
                 .correo("contacto@example.com")
