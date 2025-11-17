@@ -17,13 +17,13 @@ public class PuntosController {
         return ResponseEntity.ok(puntosService.obtenerPuntosPorUsuario(userId));
     }
 
-    @PreAuthorize("hasAnyRole('ADMINISTRADOR','VENDEDOR','CLIENTE')")
+    @PreAuthorize("hasAnyRole('ADMINISTRADOR','CLIENTE')")
     @PostMapping("/earn")
     public ResponseEntity<PuntosDTO> sumarPuntos(@RequestBody PuntosDTO dto) {
         return ResponseEntity.ok(puntosService.sumarPuntos(dto));
     }
 
-    @PreAuthorize("hasAnyRole('ADMINISTRADOR','VENDEDOR','CLIENTE')")
+    @PreAuthorize("hasAnyRole('ADMINISTRADOR','CLIENTE')")
     @PostMapping("/redeem")
     public ResponseEntity<PuntosDTO> canjearPuntos(@RequestBody PuntosDTO dto) {
         return ResponseEntity.ok(puntosService.canjearPuntos(dto));

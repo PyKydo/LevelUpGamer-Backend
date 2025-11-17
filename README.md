@@ -45,34 +45,99 @@ El backend está diseñado como un monolito modular. Cada dominio de negocio est
 
 La API sigue un patrón RESTful. La URL base es `/api`.
 
-### Autenticación (`/api/auth`)
-- `POST /login`: Inicia sesión y devuelve un token JWT.
+### Autenticacion (`/api/auth`)
+
+- **`POST /login`**: Inicia sesión y devuelve un token JWT.
+  - **Request Body:** `LoginRequest`
+    ```json
+    {
+      "username": "user@example.com",
+      "password": "password123"
+    }
+    ```
+  - **Response Body:** `LoginResponse`
+    ```json
+    {
+      "token": "jwt.token.string",
+      "rol": "CLIENTE"
+    }
+    ```
 
 ### Usuarios (`/api/users`)
-- `POST /register`: Registra un nuevo usuario.
-- `GET /{id}`: Obtiene un usuario por su ID.
-- `PUT /{id}`: Actualiza el perfil de un usuario.
+
+- **`POST /register`**: Registra un nuevo usuario.
+  - **Request Body:** `UsuarioRegistroDTO`
+    ```json
+    {
+      "nombre": "Nuevo",
+      "apellido": "Usuario",
+      "email": "nuevo.usuario@example.com",
+      "password": "password123"
+    }
+    ```
+  - **Response Body:** `UsuarioRespuestaDTO`
+- **`GET /{id}`**: Obtiene un usuario por su ID.
+  - **Response Body:** `UsuarioRespuestaDTO`
+- **`PUT /{id}`**: Actualiza el perfil de un usuario.
+  - **Request Body:** `UsuarioUpdateDTO`
+  - **Response Body:** `UsuarioRespuestaDTO`
+- **`GET /roles`**: Obtiene los roles de usuario disponibles.
 
 ### Productos (`/api/products`)
-- `GET /`: Lista todos los productos.
-- `GET /{id}`: Obtiene un producto por su ID.
-- `POST /`: (Admin) Crea un nuevo producto.
-- `PUT /{id}`: (Admin) Actualiza un producto.
-- `DELETE /{id}`: (Admin) Elimina un producto.
 
-### Carrito de Compras (`/api/cart`)
-- `GET /{userId}`: Obtiene el carrito de un usuario.
-- `POST /{userId}/add`: Agrega un producto al carrito.
-- `DELETE /{userId}/remove`: Elimina un producto del carrito.
+- **`GET /`**: Lista todos los productos.
+  - **Response Body:** `List<ProductoDTO>`
+- **`GET /{id}`**: Obtiene un producto por su ID.
+  - **Response Body:** `ProductoDTO`
+- **`POST /`**: (Admin) Crea un nuevo producto.
+  - **Request Body:** `Producto`
+  - **Response Body:** `ProductoDTO`
+- **`PUT /{id}`**: (Admin) Actualiza un producto.
+  - **Request Body:** `Producto`
+  - **Response Body:** `ProductoDTO`
+- **`DELETE /{id}`**: (Admin) Elimina un producto.
+
+### Carrito de Compras (`/api/carrito`)
+
+- **`GET /{userId}`**: Obtiene el carrito de un usuario.
+  - **Response Body:** `CarritoDto`
+- **`POST /{userId}/add`**: Agrega un producto al carrito.
+  - **Query Params:** `productId`, `quantity`
+  - **Response Body:** `CarritoDto`
+- **`DELETE /{userId}/remove`**: Elimina un producto del carrito.
+  - **Query Params:** `productId`
+  - **Response Body:** `CarritoDto`
 
 ### Pedidos (`/api/orders`)
-- `POST /`: Crea un nuevo pedido a partir del carrito.
-- `GET /user/{userId}`: Lista los pedidos de un usuario.
-- `GET /{id}`: Obtiene un pedido por su ID.
 
-### Contenido (`/api/content`)
-- `GET /blog-posts`: Lista todas las entradas del blog.
-- `POST /contact-messages`: Envía un mensaje de contacto.
+- **`POST /`**: (Cliente) Crea un nuevo pedido a partir del carrito.
+  - **Request Body:** `PedidoCrearDTO`
+  - **Response Body:** `PedidoRespuestaDTO`
+- **`GET /user/{userId}`**: Lista los pedidos de un usuario.
+  - **Response Body:** `List<PedidoRespuestaDTO>`
+- **`GET /{id}`**: Obtiene un pedido por su ID.
+  - **Response Body:** `PedidoRespuestaDTO`
+
+### Contenido (`/api/blog-posts`, `/api/contact-messages`)
+
+- **`GET /api/blog-posts`**: Lista todas las entradas del blog.
+  - **Response Body:** `List<BlogDTO>`
+- **`GET /api/blog-posts/{id}`**: Obtiene una entrada de blog por su ID.
+  - **Response Body:** `BlogDTO`
+- **`POST /api/contact-messages`**: Envía un mensaje de contacto.
+  - **Request Body:** `ContactoDTO`
+  - **Response Body:** `ContactoDTO`
+
+### Gamificación (`/api/points`)
+
+- **`GET /{userId}`**: Obtiene los puntos de un usuario.
+  - **Response Body:** `PuntosDTO`
+- **`POST /earn`**: (Cliente) Suma puntos a un usuario.
+  - **Request Body:** `PuntosDTO`
+  - **Response Body:** `PuntosDTO`
+- **`POST /redeem`**: (Cliente) Canjea puntos de un usuario.
+  - **Request Body:** `PuntosDTO`
+  - **Response Body:** `PuntosDTO`
 
 ## Pruebas
 
@@ -86,6 +151,14 @@ El proyecto incluye un conjunto de pruebas para garantizar la calidad y el corre
 ### Pruebas de Integración / E2E
 - **Descripción:** Estas pruebas validan flujos completos de la aplicación, desde el endpoint de la API hasta la base de datos. Se utilizan para verificar que los diferentes módulos interactúan correctamente. Se configuran con la anotación `@SpringBootTest` y utilizan la base de datos en memoria H2 para no interferir con los datos de desarrollo o producción.
 - **Ejemplo:** Probar que al llamar a `POST /api/cart/{userId}/add`, el producto se añade correctamente a la base de datos y la respuesta de la API es la esperada.
+- **Ubicación de Pruebas E2E:**
+  - `AutenticacionE2ETest.java`
+  - `UsuarioE2ETest.java`
+  - `ProductoE2ETest.java`
+  - `PedidoE2ETest.java`
+  - `CarritoE2ETest.java`
+  - `ContenidoE2ETest.java`
+  - `GamificacionE2ETest.java`
 
 ## Configuración y Despliegue
 

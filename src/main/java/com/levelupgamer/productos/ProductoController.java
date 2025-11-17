@@ -27,13 +27,13 @@ public class ProductoController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    @PreAuthorize("hasAnyRole('ADMINISTRADOR','VENDEDOR')")
+    @PreAuthorize("hasAnyRole('ADMINISTRADOR')")
     @PostMapping
     public ResponseEntity<ProductoDTO> crearProducto(@Valid @RequestBody Producto producto) {
         return ResponseEntity.ok(productoService.crearProducto(producto));
     }
 
-    @PreAuthorize("hasAnyRole('ADMINISTRADOR','VENDEDOR')")
+    @PreAuthorize("hasAnyRole('ADMINISTRADOR')")
     @PutMapping("/{id}")
     public ResponseEntity<ProductoDTO> actualizarProducto(@PathVariable Long id, @Valid @RequestBody Producto producto) {
         return productoService.actualizarProducto(id, producto)

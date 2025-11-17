@@ -15,7 +15,7 @@ public class PedidoController {
     @Autowired
     private PedidoService pedidoService;
 
-    @PreAuthorize("hasAnyRole('ADMINISTRADOR','VENDEDOR','CLIENTE')")
+    @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'CLIENTE')")
     @PostMapping
     public ResponseEntity<PedidoRespuestaDTO> crearPedido(@Valid @RequestBody PedidoCrearDTO dto) {
         return ResponseEntity.ok(pedidoService.crearPedido(dto));

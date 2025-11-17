@@ -43,11 +43,11 @@ public class SecurityConfig {
                 // Endpoints de Administrador
                 .requestMatchers("/api/users/roles").hasRole("ADMINISTRADOR")
 
-                // Endpoints para cualquier usuario autenticado (CLIENTE, VENDEDOR, ADMIN)
+                // Endpoints para cualquier usuario autenticado (CLIENTE, ADMIN)
                 .requestMatchers(HttpMethod.GET, "/api/users/{id}").authenticated()
                 .requestMatchers(HttpMethod.PUT, "/api/users/{id}").authenticated()
-                .requestMatchers("/api/products/**").hasAnyRole("ADMINISTRADOR", "VENDEDOR", "CLIENTE")
-                .requestMatchers("/api/orders/**").hasAnyRole("ADMINISTRADOR", "VENDEDOR", "CLIENTE") // Corregido
+                .requestMatchers("/api/products/**").hasAnyRole("ADMINISTRADOR", "CLIENTE")
+                .requestMatchers("/api/orders/**").hasAnyRole("ADMINISTRADOR", "CLIENTE")
                 .requestMatchers("/api/points/**").authenticated()
 
                 // Todas las demás peticiones requieren autenticación

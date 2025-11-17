@@ -43,12 +43,15 @@ public class UsuarioRegistroDTO {
     @Adult
     private LocalDate fechaNacimiento;
 
+    @NotBlank(message = "La región no puede estar vacía")
     @Size(max = 100)
     private String region;
 
+    @NotBlank(message = "La comuna no puede estar vacía")
     @Size(max = 100)
     private String comuna;
 
+    @NotBlank(message = "La dirección no puede estar vacía")
     @Size(max = 300)
     private String direccion;
 
