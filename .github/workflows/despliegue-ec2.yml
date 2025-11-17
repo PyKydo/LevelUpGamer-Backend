@@ -42,7 +42,6 @@ jobs:
 
       - name: Renombrar artefacto
         run: |
-          # Busca el JAR (ignorando el de 'original-') y lo renombra
           JAR_FILE=$(find target -name "levelupgamer-backend-*.jar" -not -name "*-original.jar")
           echo "Archivo JAR encontrado: $JAR_FILE"
           mv "$JAR_FILE" target/${{ env.JAR_NAME }}
