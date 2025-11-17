@@ -38,6 +38,9 @@ class AutenticacionE2ETest {
                 .correo("e2e.tester@gmail.com")
                 .contrasena("pass12345")
                 .fechaNacimiento(LocalDate.of(1999, 1, 1))
+                .region("Metropolitana")
+                .comuna("Santiago")
+                .direccion("Calle Falsa 123")
                 .build();
 
         mockMvc.perform(post("/api/users/register")
