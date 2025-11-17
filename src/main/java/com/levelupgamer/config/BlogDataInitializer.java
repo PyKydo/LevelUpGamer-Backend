@@ -16,7 +16,7 @@ public class BlogDataInitializer implements CommandLineRunner {
 
     private final BlogRepository blogRepository;
 
-    @Value("${aws.s3.bucket-name}")
+    @Value("${aws.s3.bucket.name}")
     private String bucketName;
 
     public BlogDataInitializer(BlogRepository blogRepository) {
