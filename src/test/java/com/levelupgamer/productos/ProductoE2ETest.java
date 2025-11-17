@@ -75,7 +75,7 @@ class ProductoE2ETest {
 
         String responseBody = result.getResponse().getContentAsString();
         JsonNode root = objectMapper.readTree(responseBody);
-        adminToken = root.get("token").asText();
+        adminToken = root.get("accessToken").asText();
     }
 
     @Test

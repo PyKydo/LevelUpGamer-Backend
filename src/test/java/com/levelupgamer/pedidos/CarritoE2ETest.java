@@ -86,7 +86,7 @@ class CarritoE2ETest {
                 .andExpect(status().isOk())
                 .andReturn();
         JsonNode root = objectMapper.readTree(result.getResponse().getContentAsString());
-        clienteToken = root.get("token").asText();
+        clienteToken = root.get("accessToken").asText();
 
         // Crear producto de prueba
         producto = new Producto();

@@ -15,25 +15,33 @@ import java.util.stream.Collectors;
 
 @Component
 public class JwtProvider {
-    // La clave ahora tiene 64 caracteres para cumplir con el requisito de 512 bits de HS512.
     private final String jwtSecret = "levelupgamerSecretKey123!levelupgamerSecretKey123!MoreBytesNeeded!!";
-    private final long jwtExpirationMs = 86400000; // 1 día
+    private final long jwtAccessExpirationMs = 3600000; // 1 hora
+    private final long jwtRefreshExpirationMs = 604800000; // 7 días
 
     private Key key;
 
     @PostConstruct
     public void init() {
-        // Convierte la clave secreta en un objeto Key para usarlo con jjwt
         this.key = Keys.hmacShaKeyFor(jwtSecret.getBytes());
     }
 
-    public String generateToken(Usuario usuario) {
+    public String generateAccessToken(Usuario usuario) {
         return Jwts.builder()
                 .setSubject(usuario.getCorreo())
                 .claim("roles", usuario.getRoles().stream().map(RolUsuario::name).collect(Collectors.toList()))
                 .claim("usuarioId", usuario.getId())
                 .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis() + jwtExpirationMs))
+                .setExpiration(new Date(System.currentTimeMillis() + jwtAccessExpirationMs))
+                .signWith(key, SignatureAlgorithm.HS512)
+                .compact();
+    }
+
+    public String generateRefreshToken(Usuario usuario) {
+        return Jwts.builder()
+                .setSubject(usuario.getCorreo())
+                .setIssuedAt(new Date())
+                .setExpiration(new Date(System.currentTimeMillis() + jwtRefreshExpirationMs))
                 .signWith(key, SignatureAlgorithm.HS512)
                 .compact();
     }
@@ -43,7 +51,6 @@ public class JwtProvider {
             Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(token);
             return true;
         } catch (Exception e) {
-            // Aquí podrías loguear el error específico (e.g., token expirado, firma inválida)
             return false;
         }
     }
