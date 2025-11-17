@@ -29,7 +29,7 @@ public class SecurityConfig {
             .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
                 // Endpoints Públicos
-                .requestMatchers("/api/auth/**", "/api/users/register", "/api/blog-posts/**", "/api/contact-messages/**", "/v3/api-docs/**", "/swagger-ui/**").permitAll()
+                .requestMatchers("/", "/api/auth/**", "/api/users/register", "/api/blog-posts/**", "/api/contact-messages/**", "/v3/api-docs/**", "/swagger-ui/**").permitAll()
                 
                 // Endpoints de Administrador
                 .requestMatchers("/api/users/roles").hasRole("ADMINISTRADOR")
