@@ -3,6 +3,7 @@ package com.levelupgamer.productos;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.levelupgamer.autenticacion.LoginRequest;
+import com.levelupgamer.common.S3Service;
 import com.levelupgamer.usuarios.RolUsuario;
 import com.levelupgamer.usuarios.Usuario;
 import com.levelupgamer.usuarios.UsuarioRepository;
@@ -17,6 +18,8 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.mock.web.MockMultipartFile;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -26,6 +29,7 @@ import java.util.UUID;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @SpringBootTest
@@ -46,6 +50,9 @@ class ProductoE2ETest {
     @Autowired
     private BCryptPasswordEncoder passwordEncoder;
 
+    @MockBean
+    private S3Service s3Service;
+
     private String adminToken;
 
     @BeforeEach
@@ -53,7 +60,7 @@ class ProductoE2ETest {
         // Crear el usuario admin con datos únicos
         String uniqueId = UUID.randomUUID().toString().substring(0, 8);
         Usuario admin = Usuario.builder()
-                .run("88" + uniqueId) // RUN único
+                .run("11111111-1") // RUN de prueba válido (no se valida formato aquí)
                 .nombre("Admin")
                 .apellidos("Test")
                 .correo("admin-" + uniqueId + "@example.com") // Correo único
@@ -92,10 +99,25 @@ class ProductoE2ETest {
                 .imagenes(Collections.singletonList("http://example.com/image.jpg"))
                 .build();
 
-        mockMvc.perform(post("/api/products")
-                        .header("Authorization", "Bearer " + adminToken)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(newProduct)))
+        // Construir petición multipart con las partes requeridas por el controlador
+        MockMultipartFile productoPart = new MockMultipartFile(
+                "producto",
+                "producto.json",
+                MediaType.APPLICATION_JSON_VALUE,
+                objectMapper.writeValueAsBytes(newProduct)
+        );
+
+        MockMultipartFile imagenPart = new MockMultipartFile(
+                "imagen",
+                "imagen.jpg",
+                MediaType.IMAGE_JPEG_VALUE,
+                "fake-image-content".getBytes()
+        );
+
+        mockMvc.perform(multipart("/api/products")
+                        .file(productoPart)
+                        .file(imagenPart)
+                        .header("Authorization", "Bearer " + adminToken))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.codigo").value("E2E-001"));
 

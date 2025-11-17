@@ -58,6 +58,9 @@ class UsuarioE2ETest {
                 .correo("usuario-e2e-" + uniqueId + "@gmail.com")
                 .contrasena(passwordEncoder.encode("user123"))
                 .fechaNacimiento(LocalDate.now().minusYears(25))
+                .region("Metropolitana")
+                .comuna("Santiago")
+                .direccion("Calle Test 123")
                 .roles(Set.of(RolUsuario.CLIENTE))
                 .activo(true)
                 .build();

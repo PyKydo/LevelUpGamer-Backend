@@ -1,5 +1,6 @@
 package com.levelupgamer.autenticacion;
 
+import com.levelupgamer.autenticacion.dto.ChangePasswordRequest;
 import com.levelupgamer.autenticacion.dto.LoginResponseDTO;
 import com.levelupgamer.autenticacion.dto.RefreshTokenRequestDTO;
 import com.levelupgamer.usuarios.RolUsuario;
@@ -7,6 +8,8 @@ import com.levelupgamer.usuarios.Usuario;
 import com.levelupgamer.usuarios.UsuarioRepository;
 import io.jsonwebtoken.Claims;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -60,5 +63,25 @@ public class AutenticacionService {
         } else {
             throw new BadCredentialsException("Refresh token inválido o expirado");
         }
+    }
+
+    public void changePassword(ChangePasswordRequest changePasswordRequest) {
+        var authentication = SecurityContextHolder.getContext().getAuthentication();
+
+        if (authentication == null || !authentication.isAuthenticated() || authentication.getPrincipal() == null) {
+            throw new BadCredentialsException("Usuario no autenticado");
+        }
+
+        String username = authentication.getName();
+
+        Usuario usuario = usuarioRepository.findByCorreo(username)
+                .orElseThrow(() -> new BadCredentialsException("Usuario no encontrado"));
+
+        if (!passwordEncoder.matches(changePasswordRequest.getCurrentPassword(), usuario.getContrasena())) {
+            throw new BadCredentialsException("La contraseña actual es incorrecta");
+        }
+
+        usuario.setContrasena(passwordEncoder.encode(changePasswordRequest.getNewPassword()));
+        usuarioRepository.save(usuario);
     }
 }

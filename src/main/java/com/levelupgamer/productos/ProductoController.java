@@ -3,9 +3,13 @@ package com.levelupgamer.productos;
 import com.levelupgamer.productos.dto.ProductoDTO;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.IOException;
 import java.util.List;
 
 @RestController
@@ -28,9 +32,11 @@ public class ProductoController {
     }
 
     @PreAuthorize("hasAnyRole('ADMINISTRADOR')")
-    @PostMapping
-    public ResponseEntity<ProductoDTO> crearProducto(@Valid @RequestBody Producto producto) {
-        return ResponseEntity.ok(productoService.crearProducto(producto));
+    @PostMapping(consumes = { MediaType.MULTIPART_FORM_DATA_VALUE })
+    public ResponseEntity<ProductoDTO> crearProducto(
+            @RequestPart("producto") @Valid Producto producto,
+            @RequestPart("imagen") MultipartFile imagen) throws IOException {
+        return ResponseEntity.ok(productoService.crearProducto(producto, imagen));
     }
 
     @PreAuthorize("hasAnyRole('ADMINISTRADOR')")
