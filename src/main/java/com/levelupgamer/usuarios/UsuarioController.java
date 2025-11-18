@@ -1,5 +1,7 @@
 package com.levelupgamer.usuarios;
 
+import com.levelupgamer.gamificacion.PuntosService;
+import com.levelupgamer.gamificacion.dto.PuntosDTO;
 import com.levelupgamer.usuarios.dto.UsuarioRegistroDTO;
 import com.levelupgamer.usuarios.dto.UsuarioRespuestaDTO;
 import com.levelupgamer.usuarios.dto.UsuarioUpdateDTO;
@@ -11,9 +13,11 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/users")
 public class UsuarioController {
     private final UsuarioService usuarioService;
+    private final PuntosService puntosService;
 
-    public UsuarioController(UsuarioService usuarioService) {
+    public UsuarioController(UsuarioService usuarioService, PuntosService puntosService) {
         this.usuarioService = usuarioService;
+        this.puntosService = puntosService;
     }
 
     @PostMapping("/register")
@@ -25,7 +29,10 @@ public class UsuarioController {
     @GetMapping("/{id}")
     public ResponseEntity<UsuarioRespuestaDTO> getUsuario(@PathVariable Long id) {
         return usuarioService.buscarPorId(id)
-                .map(UsuarioMapper::toDTO)
+                .map(usuario -> {
+                    PuntosDTO puntosDTO = puntosService.obtenerPuntosPorUsuario(id);
+                    return UsuarioMapper.toDTO(usuario, puntosDTO.getPuntosAcumulados());
+                })
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }

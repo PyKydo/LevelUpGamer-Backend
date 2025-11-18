@@ -100,7 +100,7 @@ public class UsuarioService {
                 .ifPresent(referrer -> puntosService.sumarPuntos(new PuntosDTO(referrer.getId(), REFERRAL_POINTS)));
         }
 
-        return UsuarioMapper.toDTO(nuevoUsuario);
+        return UsuarioMapper.toDTO(nuevoUsuario, 0);
     }
 
     public Optional<Usuario> buscarPorId(Long id) {
@@ -124,6 +124,7 @@ public class UsuarioService {
         }
 
         usuarioRepository.save(usuario);
-        return UsuarioMapper.toDTO(usuario);
+        PuntosDTO puntosDTO = puntosService.obtenerPuntosPorUsuario(id);
+        return UsuarioMapper.toDTO(usuario, puntosDTO.getPuntosAcumulados());
     }
 }

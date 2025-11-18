@@ -19,7 +19,12 @@ public class UsuarioMapper {
         u.setActivo(true);
         return u;
     }
+
     public static UsuarioRespuestaDTO toDTO(Usuario u) {
+        return toDTO(u, null);
+    }
+
+    public static UsuarioRespuestaDTO toDTO(Usuario u, Integer puntos) {
         UsuarioRespuestaDTO dto = new UsuarioRespuestaDTO();
         dto.setId(u.getId());
         dto.setRun(u.getRun());
@@ -31,6 +36,8 @@ public class UsuarioMapper {
         dto.setDireccion(u.getDireccion());
         dto.setCodigoReferido(u.getCodigoReferido());
         dto.setRol(u.getRoles() != null ? u.getRoles().toString() : null);
+        dto.setFechaNacimiento(u.getFechaNacimiento());
+        dto.setPuntosLevelUp(puntos);
         return dto;
     }
 }

@@ -1,5 +1,6 @@
 package com.levelupgamer.usuarios.dto;
 
+import java.time.LocalDate;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
@@ -20,4 +21,6 @@ public class UsuarioRespuestaDTO {
     private String direccion;
     private String codigoReferido;
     private String rol;
+    private LocalDate fechaNacimiento;
+    private Integer puntosLevelUp;
 }

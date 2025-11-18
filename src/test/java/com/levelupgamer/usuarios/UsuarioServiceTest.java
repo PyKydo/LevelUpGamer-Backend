@@ -4,6 +4,7 @@ import com.levelupgamer.exception.UserAlreadyExistsException;
 import com.levelupgamer.gamificacion.Puntos;
 import com.levelupgamer.gamificacion.PuntosRepository;
 import com.levelupgamer.gamificacion.PuntosService;
+import com.levelupgamer.gamificacion.dto.PuntosDTO;
 import com.levelupgamer.usuarios.dto.UsuarioRegistroDTO;
 import com.levelupgamer.usuarios.dto.UsuarioRespuestaDTO;
 import com.levelupgamer.usuarios.dto.UsuarioUpdateDTO;
@@ -124,6 +125,7 @@ class UsuarioServiceTest {
         
         when(usuarioRepository.findById(1L)).thenReturn(Optional.of(usuario));
         when(usuarioRepository.save(any(Usuario.class))).thenReturn(usuario);
+        when(puntosService.obtenerPuntosPorUsuario(1L)).thenReturn(new PuntosDTO(1L, 100));
 
         // When
         UsuarioRespuestaDTO result = usuarioService.actualizarUsuario(1L, updateDto);
