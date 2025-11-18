@@ -43,8 +43,8 @@ public class BlogDataInitializer implements CommandLineRunner {
                 .autor("Matías Gutiérrez")
                 .fechaPublicacion(LocalDate.now())
                 .descripcionCorta("Descubre los juegos de mesa que no pueden faltar en tus reuniones.")
-                .contenidoUrl(s3BaseUrl + "blogs/1/blog1.md")
-                .imagenUrl(s3BaseUrl + "blogs/1/blog1.jpg")
+                .contenidoUrl(s3BaseUrl + "blogs/1/blog.md")
+                .imagenUrl(s3BaseUrl + "blogs/1/blog.jpg")
                 .altImagen("Una selección de juegos de mesa sobre una mesa de madera.")
                 .build();
         blogRepository.save(blog1);
@@ -55,8 +55,8 @@ public class BlogDataInitializer implements CommandLineRunner {
                 .autor("Victor Mena")
                 .fechaPublicacion(LocalDate.now().minusDays(5))
                 .descripcionCorta("Una guía paso a paso para construir la computadora de tus sueños.")
-                .contenidoUrl(s3BaseUrl + "blogs/2/blog2.md")
-                .imagenUrl(s3BaseUrl + "blogs/2/blog2.jpg")
+                .contenidoUrl(s3BaseUrl + "blogs/2/blog.md")
+                .imagenUrl(s3BaseUrl + "blogs/2/blog.jpg")
                 .altImagen("Componentes de una PC gamer listos para ser ensamblados.")
                 .build();
         blogRepository.save(blog2);
@@ -67,8 +67,8 @@ public class BlogDataInitializer implements CommandLineRunner {
                 .autor("David Larenas")
                 .fechaPublicacion(LocalDate.now().minusDays(10))
                 .descripcionCorta("Un viaje nostálgico a las consolas que marcaron una época.")
-                .contenidoUrl(s3BaseUrl + "blogs/3/blog3.md")
-                .imagenUrl(s3BaseUrl + "blogs/3/blog3.jpg")
+                .contenidoUrl(s3BaseUrl + "blogs/3/blog.md")
+                .imagenUrl(s3BaseUrl + "blogs/3/blog.jpg")
                 .altImagen("Una colección de consolas de videojuegos retro.")
                 .build();
         blogRepository.save(blog3);
