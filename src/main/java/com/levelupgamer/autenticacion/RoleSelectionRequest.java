@@ -1,20 +1,21 @@
 package com.levelupgamer.autenticacion;
 
 import com.levelupgamer.usuarios.RolUsuario;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.Set;
-
 @Data
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class LoginResponse {
-    private String token;
+public class RoleSelectionRequest {
+    @NotBlank
     private String preAuthToken;
-    private Set<RolUsuario> roles;
-    private Long usuarioId;
+
+    @NotNull
+    private RolUsuario selectedRole;
 }

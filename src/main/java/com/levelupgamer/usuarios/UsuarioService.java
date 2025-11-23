@@ -16,6 +16,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class UsuarioService {
@@ -25,7 +26,8 @@ public class UsuarioService {
     private final PuntosService puntosService;
     private final BCryptPasswordEncoder passwordEncoder;
 
-    public UsuarioService(UsuarioRepository usuarioRepository, PuntosRepository puntosRepository, PuntosService puntosService, BCryptPasswordEncoder passwordEncoder) {
+    public UsuarioService(UsuarioRepository usuarioRepository, PuntosRepository puntosRepository,
+            PuntosService puntosService, BCryptPasswordEncoder passwordEncoder) {
         this.usuarioRepository = usuarioRepository;
         this.puntosRepository = puntosRepository;
         this.puntosService = puntosService;
@@ -97,7 +99,7 @@ public class UsuarioService {
         // Asignar puntos al referido si existe
         if (dto.getCodigoReferido() != null && !dto.getCodigoReferido().trim().isEmpty()) {
             usuarioRepository.findByCodigoReferido(dto.getCodigoReferido().trim())
-                .ifPresent(referrer -> puntosService.sumarPuntos(new PuntosDTO(referrer.getId(), REFERRAL_POINTS)));
+                    .ifPresent(referrer -> puntosService.sumarPuntos(new PuntosDTO(referrer.getId(), REFERRAL_POINTS)));
         }
 
         return UsuarioMapper.toDTO(nuevoUsuario, 0);
@@ -112,13 +114,19 @@ public class UsuarioService {
         Usuario usuario = usuarioRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado"));
 
-        if (dto.getNombre() != null) usuario.setNombre(dto.getNombre());
-        if (dto.getApellidos() != null) usuario.setApellidos(dto.getApellidos());
-        if (dto.getRegion() != null) usuario.setRegion(dto.getRegion());
-        if (dto.getComuna() != null) usuario.setComuna(dto.getComuna());
-        if (dto.getDireccion() != null) usuario.setDireccion(dto.getDireccion());
+        if (dto.getNombre() != null)
+            usuario.setNombre(dto.getNombre());
+        if (dto.getApellidos() != null)
+            usuario.setApellidos(dto.getApellidos());
+        if (dto.getRegion() != null)
+            usuario.setRegion(dto.getRegion());
+        if (dto.getComuna() != null)
+            usuario.setComuna(dto.getComuna());
+        if (dto.getDireccion() != null)
+            usuario.setDireccion(dto.getDireccion());
 
-        // Asegurar que roles sea una colección mutable antes de guardar (defensa contra Set.of() en tests)
+        // Asegurar que roles sea una colección mutable antes de guardar (defensa contra
+        // Set.of() en tests)
         if (usuario.getRoles() != null && !(usuario.getRoles() instanceof java.util.HashSet)) {
             usuario.setRoles(new HashSet<>(usuario.getRoles()));
         }
@@ -126,5 +134,39 @@ public class UsuarioService {
         usuarioRepository.save(usuario);
         PuntosDTO puntosDTO = puntosService.obtenerPuntosPorUsuario(id);
         return UsuarioMapper.toDTO(usuario, puntosDTO.getPuntosAcumulados());
+    }
+
+    @Transactional(readOnly = true)
+    public java.util.List<UsuarioRespuestaDTO> listarUsuarios() {
+        return usuarioRepository.findAll().stream()
+                .map(u -> UsuarioMapper.toDTO(u, 0)) // Puntos 0 por defecto en lista masiva
+                .collect(Collectors.toList());
+    }
+
+    @Transactional
+    public UsuarioRespuestaDTO crearUsuarioAdmin(UsuarioRegistroDTO dto) {
+        if (usuarioRepository.existsByCorreo(dto.getCorreo())) {
+            throw new IllegalArgumentException("El correo ya está registrado");
+        }
+        if (usuarioRepository.existsByRun(dto.getRun())) {
+            throw new IllegalArgumentException("El RUN ya está registrado");
+        }
+
+        Usuario usuario = UsuarioMapper.toEntity(dto);
+        usuario.setContrasena(passwordEncoder.encode(dto.getContrasena()));
+        usuario.setRoles(java.util.Set.of(RolUsuario.ADMINISTRADOR, RolUsuario.CLIENTE)); // Admin también es cliente
+        usuario.setActivo(true);
+
+        Usuario guardado = usuarioRepository.save(usuario);
+        return UsuarioMapper.toDTO(guardado, 0);
+    }
+
+    @Transactional
+    public boolean eliminarUsuario(Long id) {
+        return usuarioRepository.findById(id).map(usuario -> {
+            usuario.setActivo(false);
+            usuarioRepository.save(usuario);
+            return true;
+        }).orElse(false);
     }
 }

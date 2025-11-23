@@ -43,101 +43,221 @@ El backend está diseñado como un monolito modular. Cada dominio de negocio est
 
 ## API Endpoints
 
-La API sigue un patrón RESTful. La URL base es `/api`.
+La arquitectura del sistema expone una interfaz de programación de aplicaciones (API) basada en los principios REST (Representational State Transfer). Todos los recursos son accesibles a través de la URL base `/api`. A continuación, se detalla la especificación de los endpoints disponibles, organizados por dominio funcional.
 
-### Autenticacion (`/api/auth`)
+### 1. Autenticación y Seguridad
+Controlador: `AutenticacionController`
+Ruta base: `/api/auth`
 
-- **`POST /login`**: Inicia sesión y devuelve un token JWT.
-  - **Request Body:** `LoginRequest`
-    ```json
-    {
-      "username": "user@example.com",
-      "password": "password123"
-    }
-    ```
-  - **Response Body:** `LoginResponse`
-    ```json
-    {
-      "token": "jwt.token.string",
-      "rol": "CLIENTE"
-    }
-    ```
+Este módulo gestiona el ciclo de vida de la sesión del usuario y la seguridad de las credenciales.
 
-### Usuarios (`/api/users`)
+- **POST** `/login`
+  - **Descripción:** Permite a un usuario ingresar al sistema proporcionando sus credenciales. El sistema valida la información y retorna un token JWT (JSON Web Token) para la autorización de futuras peticiones.
+  - **Cuerpo de la Petición:** Objeto JSON con `username` (correo electrónico) y `password`.
+  - **Respuesta:** Objeto JSON conteniendo el `token` de acceso y el `rol` del usuario.
 
-- **`POST /register`**: Registra un nuevo usuario.
-  - **Request Body:** `UsuarioRegistroDTO`
-    ```json
-    {
-      "nombre": "Nuevo",
-      "apellido": "Usuario",
-      "email": "nuevo.usuario@example.com",
-      "password": "password123"
-    }
-    ```
-  - **Response Body:** `UsuarioRespuestaDTO`
-- **`GET /{id}`**: Obtiene un usuario por su ID.
-  - **Response Body:** `UsuarioRespuestaDTO`
-- **`PUT /{id}`**: Actualiza el perfil de un usuario.
-  - **Request Body:** `UsuarioUpdateDTO`
-  - **Response Body:** `UsuarioRespuestaDTO`
-- **`GET /roles`**: Obtiene los roles de usuario disponibles.
+- **POST** `/select-role`
+  - **Descripción:** Permite a un usuario con múltiples roles seleccionar el perfil con el que desea operar en la sesión actual.
+  - **Cuerpo de la Petición:** Objeto JSON indicando el rol seleccionado.
+  - **Respuesta:** Nuevo token JWT con los permisos del rol seleccionado.
 
-### Productos (`/api/products`)
+- **POST** `/refresh`
+  - **Descripción:** Renueva el token de acceso actual para extender la sesión del usuario sin necesidad de reingresar credenciales.
+  - **Cuerpo de la Petición:** Objeto JSON con el token de refresco.
+  - **Respuesta:** Nuevo token de acceso.
 
-- **`GET /`**: Lista todos los productos.
-  - **Response Body:** `List<ProductoDTO>`
-- **`GET /{id}`**: Obtiene un producto por su ID.
-  - **Response Body:** `ProductoDTO`
-- **`POST /`**: (Admin) Crea un nuevo producto.
-  - **Request Body:** `Producto`
-  - **Response Body:** `ProductoDTO`
-- **`PUT /{id}`**: (Admin) Actualiza un producto.
-  - **Request Body:** `Producto`
-  - **Response Body:** `ProductoDTO`
-- **`DELETE /{id}`**: (Admin) Elimina un producto.
+- **POST** `/change-password`
+  - **Descripción:** Permite al usuario autenticado modificar su contraseña de acceso.
+  - **Cuerpo de la Petición:** Objeto JSON con la contraseña actual y la nueva contraseña.
+  - **Respuesta:** Código de estado 200 OK si el cambio fue exitoso.
 
-### Carrito de Compras (`/api/carrito`)
+### 2. Gestión de Usuarios
+Controlador: `UsuarioController`
+Ruta base: `/api/users`
 
-- **`GET /{userId}`**: Obtiene el carrito de un usuario.
-  - **Response Body:** `CarritoDto`
-- **`POST /{userId}/add`**: Agrega un producto al carrito.
-  - **Query Params:** `productId`, `quantity`
-  - **Response Body:** `CarritoDto`
-- **`DELETE /{userId}/remove`**: Elimina un producto del carrito.
-  - **Query Params:** `productId`
-  - **Response Body:** `CarritoDto`
+Administra la información de los usuarios registrados en la plataforma.
 
-### Pedidos (`/api/orders`)
+- **POST** `/register`
+  - **Descripción:** Registra un nuevo usuario en la base de datos con el rol predeterminado de CLIENTE.
+  - **Cuerpo de la Petición:** Objeto JSON con `nombre`, `apellido`, `email` y `password`.
+  - **Respuesta:** Datos del usuario creado, excluyendo información sensible.
 
-- **`POST /`**: (Cliente) Crea un nuevo pedido a partir del carrito.
-  - **Request Body:** `PedidoCrearDTO`
-  - **Response Body:** `PedidoRespuestaDTO`
-- **`GET /user/{userId}`**: Lista los pedidos de un usuario.
-  - **Response Body:** `List<PedidoRespuestaDTO>`
-- **`GET /{id}`**: Obtiene un pedido por su ID.
-  - **Response Body:** `PedidoRespuestaDTO`
+- **GET** `/{id}`
+  - **Descripción:** Recupera la información detallada de un usuario específico mediante su identificador único.
+  - **Respuesta:** Objeto JSON con los datos del perfil del usuario y sus puntos acumulados.
 
-### Contenido (`/api/blog-posts`, `/api/contact-messages`)
+- **PUT** `/{id}`
+  - **Descripción:** Actualiza la información personal de un usuario existente.
+  - **Cuerpo de la Petición:** Objeto JSON con los campos a modificar.
+  - **Respuesta:** Datos actualizados del usuario.
 
-- **`GET /api/blog-posts`**: Lista todas las entradas del blog.
-  - **Response Body:** `List<BlogDTO>`
-- **`GET /api/blog-posts/{id}`**: Obtiene una entrada de blog por su ID.
-  - **Response Body:** `BlogDTO`
-- **`POST /api/contact-messages`**: Envía un mensaje de contacto.
-  - **Request Body:** `ContactoDTO`
-  - **Response Body:** `ContactoDTO`
+- **GET** `/roles`
+  - **Descripción:** Lista los roles disponibles en el sistema (ej. ADMINISTRADOR, CLIENTE).
+  - **Respuesta:** Array JSON con los nombres de los roles.
 
-### Gamificación (`/api/points`)
+- **GET** `/` (Requiere Rol: ADMINISTRADOR)
+  - **Descripción:** Obtiene un listado completo de todos los usuarios registrados en el sistema.
+  - **Respuesta:** Lista de objetos JSON de usuarios.
 
-- **`GET /{userId}`**: Obtiene los puntos de un usuario.
-  - **Response Body:** `PuntosDTO`
-- **`POST /earn`**: (Cliente) Suma puntos a un usuario.
-  - **Request Body:** `PuntosDTO`
-  - **Response Body:** `PuntosDTO`
-- **`POST /redeem`**: (Cliente) Canjea puntos de un usuario.
-  - **Request Body:** `PuntosDTO`
-  - **Response Body:** `PuntosDTO`
+- **POST** `/admin` (Requiere Rol: ADMINISTRADOR)
+  - **Descripción:** Crea un nuevo usuario con privilegios administrativos.
+  - **Cuerpo de la Petición:** Datos del nuevo administrador.
+  - **Respuesta:** Datos del usuario administrador creado.
+
+- **DELETE** `/{id}` (Requiere Rol: ADMINISTRADOR)
+  - **Descripción:** Elimina permanentemente un usuario del sistema.
+  - **Respuesta:** Código de estado 204 No Content si la eliminación fue exitosa.
+
+### 3. Catálogo de Productos
+Controlador: `ProductoController`
+Ruta base: `/api/products`
+
+Gestiona el inventario de productos disponibles para la venta.
+
+- **GET** `/`
+  - **Descripción:** Recupera el listado completo de productos disponibles en el catálogo.
+  - **Respuesta:** Lista de objetos JSON con detalles de cada producto (nombre, precio, stock, imagen).
+
+- **GET** `/{id}`
+  - **Descripción:** Obtiene los detalles específicos de un producto individual.
+  - **Respuesta:** Objeto JSON con la información completa del producto.
+
+- **POST** `/` (Requiere Rol: ADMINISTRADOR)
+  - **Descripción:** Ingresa un nuevo producto al catálogo. Soporta la carga de imágenes mediante `multipart/form-data`.
+  - **Cuerpo de la Petición:** Datos del producto y archivo de imagen.
+  - **Respuesta:** Datos del producto creado.
+
+- **PUT** `/{id}` (Requiere Rol: ADMINISTRADOR)
+  - **Descripción:** Modifica los atributos de un producto existente.
+  - **Cuerpo de la Petición:** Objeto JSON con los datos actualizados.
+  - **Respuesta:** Datos del producto actualizados.
+
+- **DELETE** `/{id}` (Requiere Rol: ADMINISTRADOR)
+  - **Descripción:** Retira un producto del catálogo.
+  - **Respuesta:** Código de estado 204 No Content.
+
+### 4. Carrito de Compras
+Controlador: `CarritoController`
+Ruta base: `/api/carrito`
+
+Maneja la selección temporal de productos antes de la compra.
+
+- **GET** `/{userId}`
+  - **Descripción:** Consulta el estado actual del carrito de compras de un usuario.
+  - **Respuesta:** Objeto JSON representando el carrito y sus ítems.
+
+- **POST** `/{userId}/add`
+  - **Descripción:** Agrega una cantidad específica de un producto al carrito del usuario.
+  - **Parámetros de Consulta:** `productId` (ID del producto), `quantity` (cantidad).
+  - **Respuesta:** Estado actualizado del carrito.
+
+- **DELETE** `/{userId}/remove`
+  - **Descripción:** Elimina un producto específico del carrito de compras.
+  - **Parámetros de Consulta:** `productId` (ID del producto a remover).
+  - **Respuesta:** Estado actualizado del carrito.
+
+### 5. Gestión de Pedidos
+Controlador: `PedidoController`
+Ruta base: `/api/orders`
+
+Procesa la confirmación de compras y el seguimiento de pedidos.
+
+- **POST** `/` (Roles: CLIENTE, ADMINISTRADOR)
+  - **Descripción:** Formaliza la compra generando un pedido a partir de los productos en el carrito.
+  - **Cuerpo de la Petición:** Datos necesarios para el envío y facturación.
+  - **Respuesta:** Confirmación del pedido con su número de seguimiento.
+
+- **GET** `/user/{userId}`
+  - **Descripción:** Lista el historial de pedidos realizados por un usuario.
+  - **Respuesta:** Lista de pedidos con sus respectivos estados y detalles.
+
+- **GET** `/{id}`
+  - **Descripción:** Consulta los detalles de un pedido específico.
+  - **Respuesta:** Información completa del pedido, incluyendo ítems y totales.
+
+### 6. Contenido y Blog
+Controlador: `BlogController`
+Ruta base: `/api/blog-posts`
+
+Gestiona el contenido editorial y noticias de la plataforma.
+
+- **GET** `/`
+  - **Descripción:** Lista las entradas de blog publicadas.
+  - **Respuesta:** Lista de resúmenes de artículos.
+
+- **GET** `/{id}`
+  - **Descripción:** Obtiene los metadatos de una entrada de blog específica.
+  - **Respuesta:** Detalles del artículo.
+
+- **GET** `/{id}/content`
+  - **Descripción:** Recupera el contenido completo (texto/markdown) de un artículo.
+  - **Respuesta:** Texto plano o markdown del contenido.
+
+- **POST** `/` (Requiere Rol: ADMINISTRADOR)
+  - **Descripción:** Publica una nueva entrada en el blog.
+  - **Cuerpo de la Petición:** Datos del artículo e imagen opcional.
+  - **Respuesta:** Artículo creado.
+
+- **PUT** `/{id}` (Requiere Rol: ADMINISTRADOR)
+  - **Descripción:** Edita una entrada de blog existente.
+  - **Cuerpo de la Petición:** Datos actualizados.
+  - **Respuesta:** Artículo actualizado.
+
+- **DELETE** `/{id}` (Requiere Rol: ADMINISTRADOR)
+  - **Descripción:** Elimina una entrada del blog.
+  - **Respuesta:** Código de estado 204 No Content.
+
+### 7. Reseñas y Comentarios
+Controlador: `ResenaController`
+Ruta base: `/api`
+
+Permite la interacción de los usuarios mediante valoraciones de productos.
+
+- **POST** `/reviews` (Roles: CLIENTE, ADMINISTRADOR)
+  - **Descripción:** Registra una nueva reseña y calificación para un producto.
+  - **Cuerpo de la Petición:** ID del producto, texto de la reseña y calificación numérica.
+  - **Respuesta:** Datos de la reseña creada.
+
+- **GET** `/products/{productId}/reviews`
+  - **Descripción:** Lista todas las reseñas asociadas a un producto.
+  - **Respuesta:** Lista de reseñas con comentarios y calificaciones.
+
+### 8. Gamificación y Puntos
+Controlador: `PuntosController`
+Ruta base: `/api/points`
+
+Administra el sistema de recompensas y fidelización.
+
+- **GET** `/{userId}`
+  - **Descripción:** Consulta el saldo de puntos acumulados por un usuario.
+  - **Respuesta:** Objeto JSON con el total de puntos.
+
+- **POST** `/earn` (Roles: CLIENTE, ADMINISTRADOR)
+  - **Descripción:** Asigna puntos a un usuario (generalmente por compras o acciones específicas).
+  - **Cuerpo de la Petición:** Cantidad de puntos a sumar.
+  - **Respuesta:** Saldo actualizado.
+
+- **POST** `/redeem` (Roles: CLIENTE, ADMINISTRADOR)
+  - **Descripción:** Procesa el canje de puntos por recompensas o descuentos.
+  - **Cuerpo de la Petición:** Cantidad de puntos a canjear.
+  - **Respuesta:** Saldo actualizado post-canje.
+
+### 9. Contacto
+Controlador: `ContactoController`
+Ruta base: `/api/contact-messages`
+
+- **POST** `/`
+  - **Descripción:** Recibe y almacena mensajes enviados a través del formulario de contacto.
+  - **Cuerpo de la Petición:** Nombre, correo y mensaje del usuario.
+  - **Respuesta:** Confirmación de recepción.
+
+### 10. Monitoreo (Health Check)
+Controlador: `HealthCheckController`
+Ruta base: `/`
+
+- **GET** `/`
+  - **Descripción:** Endpoint de diagnóstico para verificar que el servicio backend se encuentra operativo.
+  - **Respuesta:** Mensaje de estado "OK".
 
 ## Pruebas
 

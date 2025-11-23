@@ -7,6 +7,7 @@ import com.levelupgamer.usuarios.dto.UsuarioRespuestaDTO;
 import com.levelupgamer.usuarios.dto.UsuarioUpdateDTO;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -38,12 +39,35 @@ public class UsuarioController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<UsuarioRespuestaDTO> actualizarUsuario(@PathVariable Long id, @Valid @RequestBody UsuarioUpdateDTO dto) {
+    public ResponseEntity<UsuarioRespuestaDTO> actualizarUsuario(@PathVariable Long id,
+            @Valid @RequestBody UsuarioUpdateDTO dto) {
         return ResponseEntity.ok(usuarioService.actualizarUsuario(id, dto));
     }
 
     @GetMapping("/roles")
     public ResponseEntity<?> getRoles() {
         return ResponseEntity.ok(RolUsuario.values());
+    }
+
+    @PreAuthorize("hasRole('ADMINISTRADOR')")
+    @GetMapping
+    public ResponseEntity<java.util.List<UsuarioRespuestaDTO>> listarUsuarios() {
+        return ResponseEntity.ok(usuarioService.listarUsuarios());
+    }
+
+    @PreAuthorize("hasRole('ADMINISTRADOR')")
+    @PostMapping("/admin")
+    public ResponseEntity<UsuarioRespuestaDTO> crearAdmin(@Valid @RequestBody UsuarioRegistroDTO dto) {
+        return ResponseEntity.ok(usuarioService.crearUsuarioAdmin(dto));
+    }
+
+    @PreAuthorize("hasRole('ADMINISTRADOR')")
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> eliminarUsuario(@PathVariable Long id) {
+        if (usuarioService.eliminarUsuario(id)) {
+            return ResponseEntity.noContent().build();
+        } else {
+            return ResponseEntity.notFound().build();
+        }
     }
 }

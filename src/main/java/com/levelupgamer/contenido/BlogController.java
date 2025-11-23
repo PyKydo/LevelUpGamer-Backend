@@ -4,6 +4,7 @@ import com.levelupgamer.contenido.dto.BlogDTO;
 import com.levelupgamer.common.S3Service;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.*;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
 import java.net.URI;
@@ -94,6 +95,34 @@ public class BlogController {
             }
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_GATEWAY).build();
+        }
+    }
+
+    @PreAuthorize("hasRole('ADMINISTRADOR')")
+    @PostMapping(consumes = { MediaType.MULTIPART_FORM_DATA_VALUE })
+    public ResponseEntity<BlogDTO> crearBlog(
+            @RequestPart("blog") @jakarta.validation.Valid Blog blog,
+            @RequestPart(value = "imagen", required = false) org.springframework.web.multipart.MultipartFile imagen)
+            throws java.io.IOException {
+        return ResponseEntity.ok(blogService.crearBlog(blog, imagen));
+    }
+
+    @PreAuthorize("hasRole('ADMINISTRADOR')")
+    @PutMapping("/{id}")
+    public ResponseEntity<BlogDTO> actualizarBlog(@PathVariable Long id, @RequestBody Blog blog) {
+        return blogService.actualizarBlog(id, blog)
+                .map(blogService::toDTO)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    @PreAuthorize("hasRole('ADMINISTRADOR')")
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> eliminarBlog(@PathVariable Long id) {
+        if (blogService.eliminarBlog(id)) {
+            return ResponseEntity.noContent().build();
+        } else {
+            return ResponseEntity.notFound().build();
         }
     }
 }

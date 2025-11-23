@@ -14,6 +14,7 @@ import java.util.List;
 public class LoginResponseDTO {
     private String accessToken;
     private String refreshToken;
+    private String preAuthToken;
     private List<String> roles;
     private Long usuarioId;
 }

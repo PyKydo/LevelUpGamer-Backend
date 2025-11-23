@@ -37,6 +37,28 @@ public class JwtProvider {
                 .compact();
     }
 
+    public String generateAccessToken(Usuario usuario, RolUsuario rol) {
+        return Jwts.builder()
+                .setSubject(usuario.getCorreo())
+                .claim("roles", java.util.List.of(rol.name()))
+                .claim("usuarioId", usuario.getId())
+                .setIssuedAt(new Date())
+                .setExpiration(new Date(System.currentTimeMillis() + jwtAccessExpirationMs))
+                .signWith(key, SignatureAlgorithm.HS512)
+                .compact();
+    }
+
+    public String generatePreAuthToken(Usuario usuario) {
+        return Jwts.builder()
+                .setSubject(usuario.getCorreo())
+                .claim("type", "PRE_AUTH")
+                .claim("usuarioId", usuario.getId())
+                .setIssuedAt(new Date())
+                .setExpiration(new Date(System.currentTimeMillis() + 300000)) // 5 minutes
+                .signWith(key, SignatureAlgorithm.HS512)
+                .compact();
+    }
+
     public String generateRefreshToken(Usuario usuario) {
         return Jwts.builder()
                 .setSubject(usuario.getCorreo())
