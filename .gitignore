@@ -59,4 +59,6 @@ temp/
 # Maven wrapper scripts (optional, if you prefer to exclude them)
 mvnw
 mvnw.cmd
-s3-files/contenido/
+
+# S3 Files
+s3-files/
