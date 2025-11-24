@@ -26,17 +26,6 @@ public class AutenticacionController {
     }
 
     /**
-     * Selecciona un rol para el usuario autenticado.
-     *
-     * @param request Solicitud con el rol seleccionado.
-     * @return Nuevo token con el rol activo.
-     */
-    @PostMapping("/select-role")
-    public ResponseEntity<LoginResponseDTO> selectRole(@Valid @RequestBody RoleSelectionRequest request) {
-        return ResponseEntity.ok(autenticacionService.selectRole(request));
-    }
-
-    /**
      * Refresca el token de acceso.
      *
      * @param refreshTokenRequest Token de refresco.

@@ -122,4 +122,19 @@ class CarritoServiceTest {
         assertThat(carrito.getItems()).isEmpty();
         verify(carritoRepository).save(carrito);
     }
+
+    @Test
+    void clearCart_debeVaciarElCarrito() {
+        CarritoItem item1 = new CarritoItem(carrito, producto, 1);
+        carrito.addItem(item1);
+
+        when(carritoRepository.findByUsuarioId(1L)).thenReturn(Optional.of(carrito));
+        when(carritoRepository.save(any(Carrito.class))).thenReturn(carrito);
+        when(carritoMapper.toDto(any(Carrito.class))).thenReturn(new CarritoDto());
+
+        carritoService.clearCart(1L);
+
+        assertThat(carrito.getItems()).isEmpty();
+        verify(carritoRepository).save(carrito);
+    }
 }

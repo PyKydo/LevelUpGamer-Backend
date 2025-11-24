@@ -35,14 +35,26 @@ public class AutenticacionService {
             throw new BadCredentialsException("Usuario o contraseña inválidos");
         }
 
-        // Si tiene más de un rol, devolver pre-auth token
-        if (usuario.getRoles().size() > 1) {
-            String preAuthToken = jwtProvider.generatePreAuthToken(usuario);
+        // Si se proporciona un rol, validar que el usuario lo tenga
+        if (loginRequest.getRol() != null) {
+            if (!usuario.getRoles().contains(loginRequest.getRol())) {
+                throw new BadCredentialsException("El usuario no tiene el rol seleccionado");
+            }
+            // Generar token con el rol seleccionado
+            String accessToken = jwtProvider.generateAccessToken(usuario, loginRequest.getRol());
+            String refreshToken = jwtProvider.generateRefreshToken(usuario);
+
             return LoginResponseDTO.builder()
-                    .preAuthToken(preAuthToken)
-                    .roles(usuario.getRoles().stream().map(RolUsuario::name).collect(Collectors.toList()))
+                    .accessToken(accessToken)
+                    .refreshToken(refreshToken)
+                    .roles(java.util.List.of(loginRequest.getRol().name()))
                     .usuarioId(usuario.getId())
                     .build();
+        }
+
+        // Si no se proporciona rol y tiene más de un rol, error (o requerir selección)
+        if (usuario.getRoles().size() > 1) {
+            throw new BadCredentialsException("El usuario tiene múltiples roles. Debe seleccionar uno.");
         }
 
         // Si tiene un solo rol, flujo normal
@@ -53,36 +65,6 @@ public class AutenticacionService {
                 .accessToken(accessToken)
                 .refreshToken(refreshToken)
                 .roles(usuario.getRoles().stream().map(RolUsuario::name).collect(Collectors.toList()))
-                .usuarioId(usuario.getId())
-                .build();
-    }
-
-    public LoginResponseDTO selectRole(RoleSelectionRequest request) {
-        if (!jwtProvider.validateToken(request.getPreAuthToken())) {
-            throw new BadCredentialsException("Token de pre-autenticación inválido o expirado");
-        }
-
-        Claims claims = jwtProvider.getClaims(request.getPreAuthToken());
-        String type = (String) claims.get("type");
-        if (!"PRE_AUTH".equals(type)) {
-            throw new BadCredentialsException("Token inválido para selección de rol");
-        }
-
-        String correo = claims.getSubject();
-        Usuario usuario = usuarioRepository.findByCorreo(correo)
-                .orElseThrow(() -> new BadCredentialsException("Usuario no encontrado"));
-
-        if (!usuario.getRoles().contains(request.getSelectedRole())) {
-            throw new BadCredentialsException("El usuario no tiene el rol seleccionado");
-        }
-
-        String accessToken = jwtProvider.generateAccessToken(usuario, request.getSelectedRole());
-        String refreshToken = jwtProvider.generateRefreshToken(usuario);
-
-        return LoginResponseDTO.builder()
-                .accessToken(accessToken)
-                .refreshToken(refreshToken)
-                .roles(java.util.List.of(request.getSelectedRole().name()))
                 .usuarioId(usuario.getId())
                 .build();
     }

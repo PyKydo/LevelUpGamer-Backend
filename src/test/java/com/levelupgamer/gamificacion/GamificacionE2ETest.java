@@ -34,74 +34,77 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @ActiveProfiles("test")
 class GamificacionE2ETest {
 
-    @Autowired
-    private MockMvc mockMvc;
+        @Autowired
+        private MockMvc mockMvc;
 
-    @Autowired
-    private ObjectMapper objectMapper;
+        @Autowired
+        private ObjectMapper objectMapper;
 
-    @Autowired
-    private UsuarioRepository usuarioRepository;
+        @Autowired
+        private UsuarioRepository usuarioRepository;
 
-    @Autowired
-    private BCryptPasswordEncoder passwordEncoder;
+        @Autowired
+        private BCryptPasswordEncoder passwordEncoder;
 
-    private String clienteToken;
-    private Long clienteId;
+        private String clienteToken;
+        private Long clienteId;
 
-    @BeforeEach
-    @Transactional
-    void setUp() throws Exception {
-        // Crear el usuario cliente para la prueba
-        String uniqueId = UUID.randomUUID().toString().substring(0, 8);
-        Usuario cliente = Usuario.builder()
-                .run("44" + uniqueId)
-                .nombre("Gamificado")
-                .apellidos("Test")
-                .correo("gami-" + uniqueId + "@gmail.com")
-                .contrasena(passwordEncoder.encode("gami123"))
-                .fechaNacimiento(LocalDate.now().minusYears(22))
-                .roles(Set.of(RolUsuario.CLIENTE))
-                .activo(true)
-                .build();
-        usuarioRepository.saveAndFlush(cliente);
-        clienteId = cliente.getId();
+        @BeforeEach
+        @Transactional
+        void setUp() throws Exception {
+                // Crear el usuario cliente para la prueba
+                String uniqueId = UUID.randomUUID().toString().substring(0, 8);
+                Usuario cliente = Usuario.builder()
+                                .run("44" + uniqueId)
+                                .nombre("Gamificado")
+                                .apellidos("Test")
+                                .correo("gami-" + uniqueId + "@gmail.com")
+                                .contrasena(passwordEncoder.encode("gami123"))
+                                .fechaNacimiento(LocalDate.now().minusYears(22))
+                                .roles(Set.of(RolUsuario.CLIENTE))
+                                .activo(true)
+                                .build();
+                usuarioRepository.saveAndFlush(cliente);
+                clienteId = cliente.getId();
 
-        // Iniciar sesión como cliente
-        LoginRequest loginRequest = new LoginRequest(cliente.getCorreo(), "gami123");
-        MvcResult result = mockMvc.perform(post("/api/auth/login")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(loginRequest)))
-                .andExpect(status().isOk())
-                .andReturn();
-        JsonNode root = objectMapper.readTree(result.getResponse().getContentAsString());
-        clienteToken = root.get("accessToken").asText();
-    }
+                // Iniciar sesión como cliente
+                LoginRequest loginRequest = LoginRequest.builder()
+                                .correo(cliente.getCorreo())
+                                .contrasena("gami123")
+                                .build();
+                MvcResult result = mockMvc.perform(post("/api/auth/login")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(loginRequest)))
+                                .andExpect(status().isOk())
+                                .andReturn();
+                JsonNode root = objectMapper.readTree(result.getResponse().getContentAsString());
+                clienteToken = root.get("accessToken").asText();
+        }
 
-    @Test
-    void deberiaObtenerYModificarPuntosDeUsuario() throws Exception {
-        // 1. Obtener puntos iniciales (deberían ser 0)
-        mockMvc.perform(get("/api/points/" + clienteId)
-                        .header("Authorization", "Bearer " + clienteToken))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.puntosAcumulados").value(0));
+        @Test
+        void deberiaObtenerYModificarPuntosDeUsuario() throws Exception {
+                // 1. Obtener puntos iniciales (deberían ser 0)
+                mockMvc.perform(get("/api/points/" + clienteId)
+                                .header("Authorization", "Bearer " + clienteToken))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.puntosAcumulados").value(0));
 
-        // 2. Sumar puntos
-        PuntosDTO earnPointsDTO = new PuntosDTO(clienteId, 100);
-        mockMvc.perform(post("/api/points/earn")
-                        .header("Authorization", "Bearer " + clienteToken)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(earnPointsDTO)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.puntosAcumulados").value(100));
+                // 2. Sumar puntos
+                PuntosDTO earnPointsDTO = new PuntosDTO(clienteId, 100);
+                mockMvc.perform(post("/api/points/earn")
+                                .header("Authorization", "Bearer " + clienteToken)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(earnPointsDTO)))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.puntosAcumulados").value(100));
 
-        // 3. Canjear puntos
-        PuntosDTO redeemPointsDTO = new PuntosDTO(clienteId, 30);
-        mockMvc.perform(post("/api/points/redeem")
-                        .header("Authorization", "Bearer " + clienteToken)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(redeemPointsDTO)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.puntosAcumulados").value(70));
-    }
+                // 3. Canjear puntos
+                PuntosDTO redeemPointsDTO = new PuntosDTO(clienteId, 30);
+                mockMvc.perform(post("/api/points/redeem")
+                                .header("Authorization", "Bearer " + clienteToken)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(redeemPointsDTO)))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.puntosAcumulados").value(70));
+        }
 }

@@ -88,4 +88,50 @@ class AutenticacionServiceTest {
         // When & Then
         assertThrows(BadCredentialsException.class, () -> autenticacionService.login(loginRequest));
     }
+
+    @Test
+    void login_conRolSeleccionado_retornaLoginResponseDTO() {
+        // Given
+        usuario.setRoles(Set.of(RolUsuario.CLIENTE, RolUsuario.ADMINISTRADOR));
+        loginRequest.setRol(RolUsuario.ADMINISTRADOR);
+
+        when(usuarioRepository.findByCorreo("test@example.com")).thenReturn(Optional.of(usuario));
+        when(passwordEncoder.matches("password", "hashedPassword")).thenReturn(true);
+        when(jwtProvider.generateAccessToken(usuario, RolUsuario.ADMINISTRADOR)).thenReturn("test-access-token-admin");
+        when(jwtProvider.generateRefreshToken(usuario)).thenReturn("test-refresh-token");
+
+        // When
+        LoginResponseDTO result = autenticacionService.login(loginRequest);
+
+        // Then
+        assertNotNull(result);
+        assertEquals("test-access-token-admin", result.getAccessToken());
+        assertTrue(result.getRoles().contains("ADMINISTRADOR"));
+    }
+
+    @Test
+    void login_conMultiplesRolesYSinSeleccion_lanzaBadCredentialsException() {
+        // Given
+        usuario.setRoles(Set.of(RolUsuario.CLIENTE, RolUsuario.ADMINISTRADOR));
+        loginRequest.setRol(null);
+
+        when(usuarioRepository.findByCorreo("test@example.com")).thenReturn(Optional.of(usuario));
+        when(passwordEncoder.matches("password", "hashedPassword")).thenReturn(true);
+
+        // When & Then
+        assertThrows(BadCredentialsException.class, () -> autenticacionService.login(loginRequest));
+    }
+
+    @Test
+    void login_conRolNoAsignado_lanzaBadCredentialsException() {
+        // Given
+        usuario.setRoles(Set.of(RolUsuario.CLIENTE));
+        loginRequest.setRol(RolUsuario.ADMINISTRADOR);
+
+        when(usuarioRepository.findByCorreo("test@example.com")).thenReturn(Optional.of(usuario));
+        when(passwordEncoder.matches("password", "hashedPassword")).thenReturn(true);
+
+        // When & Then
+        assertThrows(BadCredentialsException.class, () -> autenticacionService.login(loginRequest));
+    }
 }

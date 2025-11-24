@@ -34,109 +34,130 @@ import static org.hamcrest.Matchers.*;
 @Transactional
 class CarritoE2ETest {
 
-    private final MockMvc mockMvc;
-    private final UsuarioRepository usuarioRepository;
-    private final ProductoRepository productoRepository;
-    private final CarritoRepository carritoRepository;
-    private final BCryptPasswordEncoder passwordEncoder;
-    private final ObjectMapper objectMapper;
+        private final MockMvc mockMvc;
+        private final UsuarioRepository usuarioRepository;
+        private final ProductoRepository productoRepository;
+        private final CarritoRepository carritoRepository;
+        private final BCryptPasswordEncoder passwordEncoder;
+        private final ObjectMapper objectMapper;
 
-    private Usuario usuario;
-    private Producto producto;
-    private String clienteToken;
+        private Usuario usuario;
+        private Producto producto;
+        private String clienteToken;
 
-    @Autowired
-    public CarritoE2ETest(MockMvc mockMvc, UsuarioRepository usuarioRepository, ProductoRepository productoRepository,
-                          CarritoRepository carritoRepository, BCryptPasswordEncoder passwordEncoder, ObjectMapper objectMapper) {
-        this.mockMvc = mockMvc;
-        this.usuarioRepository = usuarioRepository;
-        this.productoRepository = productoRepository;
-        this.carritoRepository = carritoRepository;
-        this.passwordEncoder = passwordEncoder;
-        this.objectMapper = objectMapper;
-    }
+        @Autowired
+        public CarritoE2ETest(MockMvc mockMvc, UsuarioRepository usuarioRepository,
+                        ProductoRepository productoRepository,
+                        CarritoRepository carritoRepository, BCryptPasswordEncoder passwordEncoder,
+                        ObjectMapper objectMapper) {
+                this.mockMvc = mockMvc;
+                this.usuarioRepository = usuarioRepository;
+                this.productoRepository = productoRepository;
+                this.carritoRepository = carritoRepository;
+                this.passwordEncoder = passwordEncoder;
+                this.objectMapper = objectMapper;
+        }
 
-    @BeforeEach
-    @Transactional
-    void setUp() throws Exception {
-        // Limpiar repositorios para asegurar un estado limpio en cada test
-        carritoRepository.deleteAll();
-        usuarioRepository.deleteAll();
-        productoRepository.deleteAll();
+        @BeforeEach
+        @Transactional
+        void setUp() throws Exception {
+                // Limpiar repositorios para asegurar un estado limpio en cada test
+                carritoRepository.deleteAll();
+                usuarioRepository.deleteAll();
+                productoRepository.deleteAll();
 
-        // Crear usuario CLIENTE con datos únicos
-        String uniqueId = UUID.randomUUID().toString().substring(0, 8);
-        usuario = Usuario.builder()
-                .run("77" + uniqueId)
-                .nombre("Cliente Carrito")
-                .apellidos("Test")
-                .correo("carrito-" + uniqueId + "@gmail.com")
-                .contrasena(passwordEncoder.encode("cliente"))
-                .fechaNacimiento(LocalDate.now().minusYears(25))
-                .roles(Set.of(RolUsuario.CLIENTE))
-                .activo(true)
-                .build();
-        usuarioRepository.saveAndFlush(usuario);
+                // Crear usuario CLIENTE con datos únicos
+                String uniqueId = UUID.randomUUID().toString().substring(0, 8);
+                usuario = Usuario.builder()
+                                .run("77" + uniqueId)
+                                .nombre("Cliente Carrito")
+                                .apellidos("Test")
+                                .correo("carrito-" + uniqueId + "@gmail.com")
+                                .contrasena(passwordEncoder.encode("cliente"))
+                                .fechaNacimiento(LocalDate.now().minusYears(25))
+                                .roles(Set.of(RolUsuario.CLIENTE))
+                                .activo(true)
+                                .build();
+                usuarioRepository.saveAndFlush(usuario);
 
-        // Iniciar sesión para obtener token JWT
-        LoginRequest loginRequest = new LoginRequest(usuario.getCorreo(), "cliente");
-        MvcResult result = mockMvc.perform(post("/api/auth/login")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(loginRequest)))
-                .andExpect(status().isOk())
-                .andReturn();
-        JsonNode root = objectMapper.readTree(result.getResponse().getContentAsString());
-        clienteToken = root.get("accessToken").asText();
+                // Iniciar sesión para obtener token JWT
+                LoginRequest loginRequest = LoginRequest.builder()
+                                .correo(usuario.getCorreo())
+                                .contrasena("cliente")
+                                .build();
+                MvcResult result = mockMvc.perform(post("/api/auth/login")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(loginRequest)))
+                                .andExpect(status().isOk())
+                                .andReturn();
+                JsonNode root = objectMapper.readTree(result.getResponse().getContentAsString());
+                clienteToken = root.get("accessToken").asText();
 
-        // Crear producto de prueba
-        producto = new Producto();
-        producto.setNombre("Test Product");
-        producto.setPrecio(new java.math.BigDecimal("99.99"));
-        producto.setStock(100);
-        producto.setCodigo("P123");
-        // Campo obligatorio en la entidad Producto (no admite NULL)
-        producto.setCategoria(com.levelupgamer.productos.CategoriaProducto.ACCESORIOS);
-        producto = productoRepository.saveAndFlush(producto);
-    }
+                // Crear producto de prueba
+                producto = new Producto();
+                producto.setNombre("Test Product");
+                producto.setPrecio(new java.math.BigDecimal("99.99"));
+                producto.setStock(100);
+                producto.setCodigo("P123");
+                // Campo obligatorio en la entidad Producto (no admite NULL)
+                producto.setCategoria(com.levelupgamer.productos.CategoriaProducto.ACCESORIOS);
+                producto = productoRepository.saveAndFlush(producto);
+        }
 
-    @Test
-    void getCartByUserId_debeCrearYRetornarCarritoVacio() throws Exception {
-        mockMvc.perform(get("/api/carrito/{userId}", usuario.getId())
-                        .header("Authorization", "Bearer " + clienteToken))
-                .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.id").exists())
-                .andExpect(jsonPath("$.items", hasSize(0)))
-                .andExpect(jsonPath("$.total", is(0.0)));
-    }
+        @Test
+        void getCartByUserId_debeCrearYRetornarCarritoVacio() throws Exception {
+                mockMvc.perform(get("/api/cart/{userId}", usuario.getId())
+                                .header("Authorization", "Bearer " + clienteToken))
+                                .andExpect(status().isOk())
+                                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                                .andExpect(jsonPath("$.id").exists())
+                                .andExpect(jsonPath("$.items", hasSize(0)))
+                                .andExpect(jsonPath("$.total", is(0.0)));
+        }
 
-    @Test
-    void addProductToCart_debeAgregarProductoYRetornarCarritoActualizado() throws Exception {
-        mockMvc.perform(post("/api/carrito/{userId}/add", usuario.getId())
-                        .header("Authorization", "Bearer " + clienteToken)
-                        .param("productId", producto.getId().toString())
-                        .param("quantity", "2"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.items", hasSize(1)))
-                .andExpect(jsonPath("$.items[0].productId", is(producto.getId().intValue())))
-                .andExpect(jsonPath("$.items[0].quantity", is(2)))
-                .andExpect(jsonPath("$.total", is(199.98))); // 2 * 99.99
-    }
+        @Test
+        void addProductToCart_debeAgregarProductoYRetornarCarritoActualizado() throws Exception {
+                mockMvc.perform(post("/api/cart/{userId}/add", usuario.getId())
+                                .header("Authorization", "Bearer " + clienteToken)
+                                .param("productId", producto.getId().toString())
+                                .param("quantity", "2"))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.items", hasSize(1)))
+                                .andExpect(jsonPath("$.items[0].productId", is(producto.getId().intValue())))
+                                .andExpect(jsonPath("$.items[0].quantity", is(2)))
+                                .andExpect(jsonPath("$.total", is(199.98))); // 2 * 99.99
+        }
 
-    @Test
-    void removeProductFromCart_debeQuitarProductoYRetornarCarritoActualizado() throws Exception {
-        // Primero, agregar un producto al carrito
-        mockMvc.perform(post("/api/carrito/{userId}/add", usuario.getId())
-                        .header("Authorization", "Bearer " + clienteToken)
-                        .param("productId", producto.getId().toString())
-                        .param("quantity", "1"));
+        @Test
+        void removeProductFromCart_debeQuitarProductoYRetornarCarritoActualizado() throws Exception {
+                // Primero, agregar un producto al carrito
+                mockMvc.perform(post("/api/cart/{userId}/add", usuario.getId())
+                                .header("Authorization", "Bearer " + clienteToken)
+                                .param("productId", producto.getId().toString())
+                                .param("quantity", "1"));
 
-        // Luego, eliminarlo
-        mockMvc.perform(delete("/api/carrito/{userId}/remove", usuario.getId())
-                        .header("Authorization", "Bearer " + clienteToken)
-                        .param("productId", producto.getId().toString()))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.items", hasSize(0)))
-                .andExpect(jsonPath("$.total", is(0.0)));
-    }
+                // Luego, eliminarlo
+                mockMvc.perform(delete("/api/cart/{userId}/remove", usuario.getId())
+                                .header("Authorization", "Bearer " + clienteToken)
+                                .param("productId", producto.getId().toString()))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.items", hasSize(0)))
+                                .andExpect(jsonPath("$.total", is(0.0)));
+        }
+
+        @Test
+        void clearCart_debeVaciarElCarrito() throws Exception {
+                // Primero, agregar un producto al carrito
+                mockMvc.perform(post("/api/cart/{userId}/add", usuario.getId())
+                                .header("Authorization", "Bearer " + clienteToken)
+                                .param("productId", producto.getId().toString())
+                                .param("quantity", "3"));
+
+                // Luego, vaciar el carrito
+                mockMvc.perform(delete("/api/cart/{userId}", usuario.getId())
+                                .header("Authorization", "Bearer " + clienteToken))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.items", hasSize(0)))
+                                .andExpect(jsonPath("$.total", is(0.0)));
+        }
 }

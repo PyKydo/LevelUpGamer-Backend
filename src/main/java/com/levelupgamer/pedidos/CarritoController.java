@@ -5,7 +5,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/carrito")
+@RequestMapping("/api/cart")
 public class CarritoController {
 
     private final CarritoService carritoService;
@@ -21,14 +21,19 @@ public class CarritoController {
 
     @PostMapping("/{userId}/add")
     public ResponseEntity<CarritoDto> addProductToCart(@PathVariable Long userId,
-                                                       @RequestParam Long productId,
-                                                       @RequestParam int quantity) {
+            @RequestParam Long productId,
+            @RequestParam int quantity) {
         return ResponseEntity.ok(carritoService.addProductToCart(userId, productId, quantity));
     }
 
     @DeleteMapping("/{userId}/remove")
     public ResponseEntity<CarritoDto> removeProductFromCart(@PathVariable Long userId,
-                                                            @RequestParam Long productId) {
+            @RequestParam Long productId) {
         return ResponseEntity.ok(carritoService.removeProductFromCart(userId, productId));
+    }
+
+    @DeleteMapping("/{userId}")
+    public ResponseEntity<CarritoDto> deleteCart(@PathVariable Long userId) {
+        return ResponseEntity.ok(carritoService.clearCart(userId));
     }
 }

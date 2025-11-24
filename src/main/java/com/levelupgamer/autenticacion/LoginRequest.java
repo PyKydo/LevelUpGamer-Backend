@@ -19,5 +19,6 @@ public class LoginRequest {
     @NotNull
     @Size(min = 4, max = 10)
     private String contrasena;
-}
 
+    private com.levelupgamer.usuarios.RolUsuario rol;
+}

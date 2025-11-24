@@ -52,14 +52,9 @@ Ruta base: `/api/auth`
 Este módulo gestiona el ciclo de vida de la sesión del usuario y la seguridad de las credenciales.
 
 - **POST** `/login`
-  - **Descripción:** Permite a un usuario ingresar al sistema proporcionando sus credenciales. El sistema valida la información y retorna un token JWT (JSON Web Token) para la autorización de futuras peticiones.
-  - **Cuerpo de la Petición:** Objeto JSON con `username` (correo electrónico) y `password`.
+  - **Descripción:** Permite a un usuario ingresar al sistema proporcionando sus credenciales. Si el usuario tiene múltiples roles, debe especificar el rol deseado en el cuerpo de la petición.
+  - **Cuerpo de la Petición:** Objeto JSON con `username` (correo electrónico), `password` y opcionalmente `rol`.
   - **Respuesta:** Objeto JSON conteniendo el `token` de acceso y el `rol` del usuario.
-
-- **POST** `/select-role`
-  - **Descripción:** Permite a un usuario con múltiples roles seleccionar el perfil con el que desea operar en la sesión actual.
-  - **Cuerpo de la Petición:** Objeto JSON indicando el rol seleccionado.
-  - **Respuesta:** Nuevo token JWT con los permisos del rol seleccionado.
 
 - **POST** `/refresh`
   - **Descripción:** Renueva el token de acceso actual para extender la sesión del usuario sin necesidad de reingresar credenciales.
@@ -138,7 +133,7 @@ Gestiona el inventario de productos disponibles para la venta.
 
 ### 4. Carrito de Compras
 Controlador: `CarritoController`
-Ruta base: `/api/carrito`
+Ruta base: `/api/cart`
 
 Maneja la selección temporal de productos antes de la compra.
 
@@ -155,6 +150,10 @@ Maneja la selección temporal de productos antes de la compra.
   - **Descripción:** Elimina un producto específico del carrito de compras.
   - **Parámetros de Consulta:** `productId` (ID del producto a remover).
   - **Respuesta:** Estado actualizado del carrito.
+
+- **DELETE** `/{userId}`
+  - **Descripción:** Vacía completamente el carrito de compras del usuario.
+  - **Respuesta:** Estado actualizado del carrito (vacío).
 
 ### 5. Gestión de Pedidos
 Controlador: `PedidoController`
