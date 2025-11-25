@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import java.nio.charset.StandardCharsets;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.web.servlet.MockMvc;
@@ -75,8 +76,8 @@ class BlogE2ETest {
 
         when(blogService.buscarPorId(1L)).thenReturn(Optional.of(blog));
         when(fileStorageService.readContentIfManaged(publicUrl)).thenReturn(Optional.empty());
-        when(restTemplate.getForEntity(publicUrl, String.class))
-                .thenReturn(new ResponseEntity<>(markdown, HttpStatus.OK));
+        when(restTemplate.getForEntity(publicUrl, byte[].class))
+            .thenReturn(new ResponseEntity<>(markdown.getBytes(StandardCharsets.UTF_8), HttpStatus.OK));
 
         mockMvc.perform(get("/api/v1/blog-posts/1/content"))
                 .andExpect(status().isOk())
