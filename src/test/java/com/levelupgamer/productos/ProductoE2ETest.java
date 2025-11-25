@@ -137,12 +137,16 @@ class ProductoE2ETest {
 
                 when(fileStorageService.uploadFile(any(), any(), anyLong())).thenReturn("/uploads/e2e.jpg");
 
-                mockMvc.perform(multipart("/api/v1/products")
+                MvcResult creation = mockMvc.perform(multipart("/api/v1/products")
                                 .file(productoPart)
                                 .file(imagenPart)
                                 .header("Authorization", "Bearer " + adminToken))
                                 .andExpect(status().isOk())
-                                .andExpect(jsonPath("$.codigo").value("E2E-001"));
+                                .andExpect(jsonPath("$.codigo").value("E2E-001"))
+                                .andReturn();
+
+                JsonNode creationJson = objectMapper.readTree(creation.getResponse().getContentAsString());
+                long productId = creationJson.get("id").asLong();
 
                 
                 mockMvc.perform(get("/api/v1/products")
@@ -150,6 +154,16 @@ class ProductoE2ETest {
                                 .andExpect(status().isOk())
                                 .andExpect(jsonPath("$").isArray())
                                 .andExpect(jsonPath("$[?(@.codigo=='E2E-001')]").exists());
+
+                
+                mockMvc.perform(get("/api/v1/products"))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$").isArray())
+                                .andExpect(jsonPath("$[?(@.codigo=='E2E-001')]").exists());
+
+                mockMvc.perform(get("/api/v1/products/" + productId))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.id").value(productId));
         }
 
         @Test

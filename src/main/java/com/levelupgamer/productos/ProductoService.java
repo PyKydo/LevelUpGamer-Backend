@@ -15,6 +15,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -34,12 +35,15 @@ public class ProductoService {
 
     @Transactional(readOnly = true)
     public List<ProductoDTO> listarProductos() {
-        Authentication authentication = requireAuthentication();
-        boolean isAdmin = hasRole(authentication, RolUsuario.ADMINISTRADOR);
-        boolean isVendor = hasRole(authentication, RolUsuario.VENDEDOR);
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        boolean isAuthenticated = authentication != null
+                && authentication.isAuthenticated()
+                && !(authentication instanceof AnonymousAuthenticationToken);
+        boolean isAdmin = isAuthenticated && hasRole(authentication, RolUsuario.ADMINISTRADOR);
+        boolean isVendor = isAuthenticated && hasRole(authentication, RolUsuario.VENDEDOR);
 
         List<Producto> productos;
-        if (isVendor && !isAdmin) {
+        if (isAuthenticated && isVendor && !isAdmin) {
             Usuario vendedor = resolveCurrentUser(authentication);
             productos = productoRepository.findAllByVendedorId(vendedor.getId());
         } else {
@@ -223,6 +227,9 @@ public class ProductoService {
     }
 
     private boolean hasRole(Authentication authentication, RolUsuario rol) {
+        if (authentication == null) {
+            return false;
+        }
         String requiredAuthority = "ROLE_" + rol.name();
         for (GrantedAuthority authority : authentication.getAuthorities()) {
             if (requiredAuthority.equals(authority.getAuthority())) {

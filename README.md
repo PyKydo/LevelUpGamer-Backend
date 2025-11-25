@@ -81,8 +81,8 @@ Consulta `docs/personal/DEPLOYMENT.md` para el detalle de `EnvironmentFile` y el
 
 - Filtro `JwtAutenticacionFilter` agrega `SecurityContext` a partir del header `Authorization: Bearer <token>`.
 - `SecurityConfig` habilita CORS global (`*`) y define accesos:
-- Público: `/`, `/api/v1/auth/login`, `/api/v1/auth/refresh`, `/api/v1/users/register`, `/api/v1/blog-posts/**`, `/api/v1/contact-messages`, `/swagger-ui/**`, `/v3/api-docs/**`.
-- Requiere autenticación: `/api/v1/users/{id}`, `/api/v1/products/**`, `/api/v1/categories/**`, `/api/v1/boletas/**`, `/api/v1/points/**`, `/api/v1/cart/**`, `/api/v1/reviews/**`.
+- Público: `/`, `/api/v1/auth/login`, `/api/v1/auth/refresh`, `/api/v1/users/register`, `/api/v1/products`, `/api/v1/products/{id}`, `/api/v1/products/featured`, `/api/v1/blog-posts/**`, `/api/v1/contact-messages`, `/swagger-ui/**`, `/v3/api-docs/**`.
+- Requiere autenticación: `/api/v1/users/{id}`, `/api/v1/categories/**`, `/api/v1/boletas/**`, `/api/v1/points/**`, `/api/v1/cart/**`, `/api/v1/reviews/**`, además de cualquier operación **POST/PUT/PATCH/DELETE** sobre `/api/v1/products/**`.
 - Rol vendedor: `VENDEDOR` puede listar solo sus productos, crear/actualizar/eliminar elementos de su inventario (no los corporativos) y consultar boletas para seguimiento comercial; cualquier intento fuera de esos límites responde `403`.
 - Solo admins: `/api/v1/users`, `/api/v1/users/roles`, `/api/v1/users/admin`, mutaciones de categorías y blogs, además de la gestión de productos corporativos “LevelUp”.
 - Errores se devuelven como `{ "error": "mensaje" }` o mapas campo -> error en validaciones.

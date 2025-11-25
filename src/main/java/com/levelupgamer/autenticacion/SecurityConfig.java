@@ -39,6 +39,7 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.POST, "/api/v1/auth/login").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/v1/auth/refresh").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/v1/users/register").permitAll() 
+                .requestMatchers(HttpMethod.GET, "/api/v1/products", "/api/v1/products/", "/api/v1/products/*").permitAll()
                 .requestMatchers("/api/v1/blog-posts/**", "/api/v1/contact-messages/**", "/v3/api-docs/**", "/swagger-ui/**").permitAll()
                 
                 
@@ -48,7 +49,6 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/api/v1/users/{id}").authenticated()
                 .requestMatchers(HttpMethod.PUT, "/api/v1/users/{id}").authenticated()
 
-                .requestMatchers(HttpMethod.GET, "/api/v1/products/**").hasAnyRole("ADMINISTRADOR", "CLIENTE", "VENDEDOR")
                 .requestMatchers(HttpMethod.POST, "/api/v1/products/**").hasAnyRole("ADMINISTRADOR", "VENDEDOR")
                 .requestMatchers(HttpMethod.PUT, "/api/v1/products/**").hasAnyRole("ADMINISTRADOR", "VENDEDOR")
                 .requestMatchers(HttpMethod.PATCH, "/api/v1/products/**").hasAnyRole("ADMINISTRADOR", "VENDEDOR")
