@@ -76,7 +76,7 @@ public class LocalFileStorageService implements FileStorageService {
                 return path.substring(publicPrefix.length());
             }
         } catch (IllegalArgumentException ignored) {
-            // dejar pasar y retornar null
+            
         }
         if (value.startsWith("local://")) {
             return value.substring("local://".length());

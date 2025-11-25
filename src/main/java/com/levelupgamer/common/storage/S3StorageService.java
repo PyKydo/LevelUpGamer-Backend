@@ -100,7 +100,7 @@ public class S3StorageService implements FileStorageService {
                 }
             }
         } catch (IllegalArgumentException ignored) {
-            // Si la URL no es válida, se ignorará y se devolverá null
+            
         }
         return null;
     }

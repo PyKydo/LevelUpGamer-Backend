@@ -109,7 +109,7 @@ public class PedidoService {
         return pedidoRepository.findById(id);
     }
 
-    // --- Métodos Auxiliares ---
+    
 
     private Usuario obtenerUsuario(Long usuarioId) {
         Objects.requireNonNull(usuarioId, "El id de usuario no puede ser nulo");

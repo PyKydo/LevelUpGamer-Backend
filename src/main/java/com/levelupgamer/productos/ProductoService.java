@@ -64,8 +64,8 @@ public class ProductoService {
             producto.setStockCritico(nuevo.getStockCritico());
             producto.setCategoria(nuevo.getCategoria());
             producto.setPuntosLevelUp(normalizarPuntos(nuevo.getPuntosLevelUp()));
-            // La actualización de imágenes requeriría un endpoint separado
-            // producto.setImagenes(nuevo.getImagenes());
+            
+            
             productoRepository.save(producto);
             return producto;
         });

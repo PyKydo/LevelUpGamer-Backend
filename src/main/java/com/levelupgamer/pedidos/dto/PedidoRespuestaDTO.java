@@ -25,6 +25,6 @@ public class PedidoRespuestaDTO {
     private String cuponCodigo;
     private LocalDateTime fecha;
     private String estado;
-    // Getters y setters
-    // ...
+    
+    
 }

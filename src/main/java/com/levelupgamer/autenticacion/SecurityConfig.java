@@ -30,28 +30,28 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-            .cors(cors -> cors.configurationSource(corsConfigurationSource())) // Habilitar CORS
+            .cors(cors -> cors.configurationSource(corsConfigurationSource())) 
             .csrf(csrf -> csrf.disable())
             .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
-                // Endpoints Públicos
-                .requestMatchers(HttpMethod.GET, "/").permitAll() // Health check
+                
+                .requestMatchers(HttpMethod.GET, "/").permitAll() 
                 .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/auth/refresh").permitAll()
-                .requestMatchers(HttpMethod.POST, "/api/users/register").permitAll() // Registro de usuario
+                .requestMatchers(HttpMethod.POST, "/api/users/register").permitAll() 
                 .requestMatchers("/api/blog-posts/**", "/api/contact-messages/**", "/v3/api-docs/**", "/swagger-ui/**").permitAll()
                 
-                // Endpoints de Administrador
+                
                 .requestMatchers("/api/users/roles").hasRole("ADMINISTRADOR")
 
-                // Endpoints para cualquier usuario autenticado (CLIENTE, ADMIN)
+                
                 .requestMatchers(HttpMethod.GET, "/api/users/{id}").authenticated()
                 .requestMatchers(HttpMethod.PUT, "/api/users/{id}").authenticated()
                 .requestMatchers("/api/products/**").hasAnyRole("ADMINISTRADOR", "CLIENTE")
                 .requestMatchers("/api/orders/**").hasAnyRole("ADMINISTRADOR", "CLIENTE")
                 .requestMatchers("/api/points/**").authenticated()
 
-                // Todas las demás peticiones requieren autenticación
+                
                 .anyRequest().authenticated()
             )
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);

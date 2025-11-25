@@ -12,6 +12,5 @@ import lombok.Builder;
 public class PuntosDTO {
     private Long usuarioId;
     private Integer puntosAcumulados;
-    // private List<MovimientoPuntosDTO> historialCanjes; // Para futuro
 }
 

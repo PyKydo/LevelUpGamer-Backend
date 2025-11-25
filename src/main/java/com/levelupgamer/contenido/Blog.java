@@ -37,15 +37,15 @@ public class Blog {
     private String descripcionCorta;
 
     @Size(max = 512)
-    private String contenidoUrl; // URL al archivo .md en S3
+    private String contenidoUrl; 
 
     @Size(max = 512)
-    private String imagenUrl; // URL a la imagen principal en S3
+    private String imagenUrl; 
     
     @Size(max = 255)
     private String altImagen;
 
-    // Auditoría
+    
     @CreatedDate
     @Column(updatable = false)
     private LocalDateTime createdAt;

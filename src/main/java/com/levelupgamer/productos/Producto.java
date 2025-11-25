@@ -70,11 +70,11 @@ public class Producto {
     @Column(name = "imagen_url")
     private List<String> imagenes;
 
-    // Soft delete
+    
     @Builder.Default
     private Boolean activo = true;
 
-    // Auditoría
+    
     @CreatedDate
     @Column(updatable = false)
     private LocalDateTime createdAt;

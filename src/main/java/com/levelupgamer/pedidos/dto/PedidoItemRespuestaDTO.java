@@ -21,6 +21,6 @@ public class PedidoItemRespuestaDTO {
     private Integer cantidad;
     private BigDecimal precioUnitario;
     private BigDecimal subtotal;
-    // Getters y setters
-    // ...
+    
+    
 }

@@ -38,7 +38,7 @@ public class UsuarioService {
     public UsuarioRespuestaDTO registrarUsuario(UsuarioRegistroDTO dto) {
         Objects.requireNonNull(dto, "Datos de registro no pueden ser nulos");
 
-        // Normalizar y validar correo
+        
         if (dto.getCorreo() == null || dto.getCorreo().trim().isEmpty()) {
             throw new IllegalArgumentException("Correo es obligatorio");
         }
@@ -47,7 +47,7 @@ public class UsuarioService {
             throw new IllegalArgumentException("Correo demasiado largo");
         }
 
-        // Normalizar y validar RUN
+        
         if (dto.getRun() == null || dto.getRun().trim().isEmpty()) {
             throw new IllegalArgumentException("RUN es obligatorio");
         }
@@ -56,7 +56,7 @@ public class UsuarioService {
             throw new IllegalArgumentException("RUN inválido: debe tener entre 7 y 9 caracteres sin puntos ni guion");
         }
 
-        // Validar contraseña
+        
         if (dto.getContrasena() == null) {
             throw new IllegalArgumentException("Contraseña es obligatoria");
         }
@@ -65,7 +65,7 @@ public class UsuarioService {
             throw new IllegalArgumentException("Contraseña inválida: debe tener entre 4 y 10 caracteres");
         }
 
-        // Comprobaciones de unicidad con datos normalizados
+        
         if (usuarioRepository.existsByCorreo(correo)) {
             throw new UserAlreadyExistsException("Correo ya registrado");
         }
@@ -77,7 +77,7 @@ public class UsuarioService {
         usuario.setRun(normalizedRun);
         usuario.setCorreo(correo);
         usuario.setContrasena(passwordEncoder.encode(contrasena));
-        // Usar un Set mutable para que JPA pueda operar sobre la colección
+        
         HashSet<RolUsuario> roles = new HashSet<>();
         roles.add(RolUsuario.CLIENTE);
         usuario.setRoles(roles);
@@ -88,15 +88,15 @@ public class UsuarioService {
 
         Usuario nuevoUsuario = usuarioRepository.save(usuario);
 
-        // Crear el registro de puntos inicial para el nuevo usuario
+        
         Puntos puntos = Puntos.builder()
                 .usuario(nuevoUsuario)
-                // no setUsuarioId: dejar que @MapsId asigne el id
+                
                 .puntosAcumulados(0)
                 .build();
         puntosRepository.save(puntos);
 
-        // Asignar puntos al referido si existe
+        
         if (dto.getCodigoReferido() != null && !dto.getCodigoReferido().trim().isEmpty()) {
             usuarioRepository.findByCodigoReferido(dto.getCodigoReferido().trim())
                     .ifPresent(referrer -> puntosService.sumarPuntos(new PuntosDTO(referrer.getId(), REFERRAL_POINTS)));
@@ -125,8 +125,8 @@ public class UsuarioService {
         if (dto.getDireccion() != null)
             usuario.setDireccion(dto.getDireccion());
 
-        // Asegurar que roles sea una colección mutable antes de guardar (defensa contra
-        // Set.of() en tests)
+        
+        
         if (usuario.getRoles() != null && !(usuario.getRoles() instanceof java.util.HashSet)) {
             usuario.setRoles(new HashSet<>(usuario.getRoles()));
         }
@@ -139,7 +139,7 @@ public class UsuarioService {
     @Transactional(readOnly = true)
     public java.util.List<UsuarioRespuestaDTO> listarUsuarios() {
         return usuarioRepository.findAll().stream()
-                .map(u -> UsuarioMapper.toDTO(u, 0)) // Puntos 0 por defecto en lista masiva
+                .map(u -> UsuarioMapper.toDTO(u, 0)) 
                 .collect(Collectors.toList());
     }
 
@@ -154,7 +154,7 @@ public class UsuarioService {
 
         Usuario usuario = UsuarioMapper.toEntity(dto);
         usuario.setContrasena(passwordEncoder.encode(dto.getContrasena()));
-        usuario.setRoles(java.util.Set.of(RolUsuario.ADMINISTRADOR, RolUsuario.CLIENTE)); // Admin también es cliente
+        usuario.setRoles(java.util.Set.of(RolUsuario.ADMINISTRADOR, RolUsuario.CLIENTE)); 
         usuario.setActivo(true);
 
         Usuario guardado = usuarioRepository.save(usuario);

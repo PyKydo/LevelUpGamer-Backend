@@ -46,7 +46,7 @@ public class PedidoItem {
     @DecimalMin("0.0")
     private BigDecimal subtotal;
 
-    // Auditoría
+    
     @CreatedDate
     @Column(updatable = false)
     private LocalDateTime createdAt;
@@ -54,7 +54,7 @@ public class PedidoItem {
     @LastModifiedDate
     private LocalDateTime updatedAt;
 
-    // Getters y setters
+    
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
     public Pedido getPedido() { return pedido; }

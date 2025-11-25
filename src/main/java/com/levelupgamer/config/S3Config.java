@@ -26,7 +26,7 @@ public class S3Config {
     public S3Client s3Client() {
         return S3Client.builder()
                 .region(Region.of(awsRegion))
-                // Para tests y dev usamos credenciales estáticas dummy; en prod se pueden sobreescribir por properties/ENV
+                
                 .credentialsProvider(StaticCredentialsProvider.create(
                         AwsBasicCredentials.create(accessKey, secretKey)
                 ))

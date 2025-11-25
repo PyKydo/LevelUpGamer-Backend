@@ -58,7 +58,7 @@ public class Pedido {
     @Column(nullable = false, length = 30)
     private EstadoPedido estado;
 
-    // Auditoría
+    
     @CreatedDate
     @Column(updatable = false)
     private LocalDateTime createdAt;

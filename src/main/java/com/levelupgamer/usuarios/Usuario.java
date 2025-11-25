@@ -84,11 +84,11 @@ public class Usuario {
     @OneToMany(mappedBy = "usuario")
     private Set<Pedido> pedidos;
 
-    // Soft delete
+    
     @Builder.Default
     private Boolean activo = true;
 
-    // Auditoría
+    
     @CreatedDate
     @Column(updatable = false)
     private LocalDateTime createdAt;

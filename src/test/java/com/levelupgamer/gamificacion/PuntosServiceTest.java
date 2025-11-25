@@ -15,6 +15,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
+@SuppressWarnings("null")
 class PuntosServiceTest {
 
     @Mock
@@ -23,12 +24,17 @@ class PuntosServiceTest {
     @Mock
     private UsuarioRepository usuarioRepository; 
 
+    @Mock
+    private MovimientoPuntosRepository movimientoPuntosRepository;
+
     @InjectMocks
     private PuntosService puntosService;
 
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
+        when(movimientoPuntosRepository.save(any(MovimientoPuntos.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
     }
 
     @Test
