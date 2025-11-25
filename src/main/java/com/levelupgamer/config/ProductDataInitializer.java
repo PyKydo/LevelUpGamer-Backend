@@ -4,6 +4,9 @@ import com.levelupgamer.productos.Producto;
 import com.levelupgamer.productos.ProductoRepository;
 import com.levelupgamer.productos.categorias.Categoria;
 import com.levelupgamer.productos.categorias.CategoriaRepository;
+import com.levelupgamer.usuarios.RolUsuario;
+import com.levelupgamer.usuarios.Usuario;
+import com.levelupgamer.usuarios.UsuarioRepository;
 import java.math.BigDecimal;
 import java.util.Collections;
 import org.springframework.beans.factory.annotation.Value;
@@ -16,18 +19,21 @@ import org.springframework.util.StringUtils;
 
 @Component
 @Profile("!test")
-@Order(1)
+@Order(2)
 public class ProductDataInitializer implements CommandLineRunner {
 
         private final ProductoRepository productoRepository;
         private final CategoriaRepository categoriaRepository;
+        private final UsuarioRepository usuarioRepository;
 
         @Value("${aws.s3.bucket.url:}")
         private String s3BucketUrl;
 
-        public ProductDataInitializer(ProductoRepository productoRepository, CategoriaRepository categoriaRepository) {
+        public ProductDataInitializer(ProductoRepository productoRepository, CategoriaRepository categoriaRepository,
+                        UsuarioRepository usuarioRepository) {
                 this.productoRepository = productoRepository;
                 this.categoriaRepository = categoriaRepository;
+                this.usuarioRepository = usuarioRepository;
         }
 
     @Override
@@ -43,6 +49,7 @@ public class ProductDataInitializer implements CommandLineRunner {
 
         @SuppressWarnings("null")
         private void createProducts() {
+        Usuario levelUpVendor = resolveLevelUpVendor();
         Categoria juegosMesa = obtenerOCrearCategoria("JUEGOS_MESA", "Juegos de Mesa",
                 "Juegos de estrategia y mesa para toda la familia");
         Categoria accesorios = obtenerOCrearCategoria("ACCESORIOS", "Accesorios",
@@ -72,6 +79,7 @@ public class ProductDataInitializer implements CommandLineRunner {
                 .puntosLevelUp(200)
                 .imagenes(Collections.singletonList(buildProductImage("JM001-catan.webp")))
                 .activo(true)
+                .vendedor(levelUpVendor)
                 .build();
         productoRepository.save(jm001);
 
@@ -87,6 +95,7 @@ public class ProductDataInitializer implements CommandLineRunner {
                 .puntosLevelUp(200)
                 .imagenes(Collections.singletonList(buildProductImage("JM002-carcassonne.webp")))
                 .activo(true)
+                .vendedor(levelUpVendor)
                 .build();
         productoRepository.save(jm002);
 
@@ -102,11 +111,12 @@ public class ProductDataInitializer implements CommandLineRunner {
                 .puntosLevelUp(300)
                 .imagenes(Collections.singletonList(buildProductImage("AC001-xbox-controller.webp")))
                 .activo(true)
+                .vendedor(levelUpVendor)
                 .build();
         productoRepository.save(ac001);
 
         // AC002 - Auriculares Gamer HyperX Cloud II
-        Producto ac002 = Producto.builder()
+                Producto ac002 = Producto.builder()
             .codigo("AC002")
             .nombre("Auriculares Gamer HyperX Cloud II")
             .descripcion("Proporcionan un sonido envolvente de calidad con un micrófono desmontable y almohadillas de espuma viscoelástica para mayor comodidad durante largas sesiones de juego.")
@@ -117,6 +127,7 @@ public class ProductDataInitializer implements CommandLineRunner {
             .puntosLevelUp(400)
             .imagenes(Collections.singletonList(buildProductImage("AC002-hyperx-cloud.webp")))
             .activo(true)
+            .vendedor(levelUpVendor)
             .build();
         productoRepository.save(ac002);
 
@@ -132,6 +143,7 @@ public class ProductDataInitializer implements CommandLineRunner {
                 .puntosLevelUp(800)
                 .imagenes(Collections.singletonList(buildProductImage("CQ001-ps5.webp")))
                 .activo(true)
+                .vendedor(levelUpVendor)
                 .build();
         productoRepository.save(cq001);
 
@@ -147,6 +159,7 @@ public class ProductDataInitializer implements CommandLineRunner {
                 .puntosLevelUp(1000)
                 .imagenes(Collections.singletonList(buildProductImage("CG001-asus-rog.webp")))
                 .activo(true)
+                .vendedor(levelUpVendor)
                 .build();
         productoRepository.save(cg001);
 
@@ -162,6 +175,7 @@ public class ProductDataInitializer implements CommandLineRunner {
                 .puntosLevelUp(300)
                 .imagenes(Collections.singletonList(buildProductImage("SG001-secretlab-titan.webp")))
                 .activo(true)
+                .vendedor(levelUpVendor)
                 .build();
         productoRepository.save(sg001);
 
@@ -177,6 +191,7 @@ public class ProductDataInitializer implements CommandLineRunner {
                 .puntosLevelUp(200)
                 .imagenes(Collections.singletonList(buildProductImage("MS001-logitech-g502.webp")))
                 .activo(true)
+                .vendedor(levelUpVendor)
                 .build();
         productoRepository.save(ms001);
 
@@ -192,6 +207,7 @@ public class ProductDataInitializer implements CommandLineRunner {
                 .puntosLevelUp(100)
                 .imagenes(Collections.singletonList(buildProductImage("MP001-razer-goliathus.webp")))
                 .activo(true)
+                .vendedor(levelUpVendor)
                 .build();
         productoRepository.save(mp001);
 
@@ -205,8 +221,9 @@ public class ProductDataInitializer implements CommandLineRunner {
                 .stockCritico(8)
                 .categoria(poleras)
                 .puntosLevelUp(100)
-                                .imagenes(Collections.singletonList(buildProductImage("PP001-levelup-tshirt.webp")))
+                .imagenes(Collections.singletonList(buildProductImage("PP001-levelup-tshirt.webp")))
                 .activo(true)
+                .vendedor(levelUpVendor)
                 .build();
         productoRepository.save(pp001);
     }
@@ -219,6 +236,13 @@ public class ProductDataInitializer implements CommandLineRunner {
         String seed = fileName.replace('.', '-');
         return "https://picsum.photos/seed/levelup-" + seed + "/800/800";
     }
+
+        @SuppressWarnings("null")
+        private Usuario resolveLevelUpVendor() {
+                return usuarioRepository.findFirstByRolesContaining(RolUsuario.ADMINISTRADOR)
+                                .orElseThrow(() -> new IllegalStateException(
+                                                "Debe existir al menos un usuario ADMINISTRADOR para asociar los productos seed a LevelUp"));
+        }
 
     @SuppressWarnings("null")
     private Categoria obtenerOCrearCategoria(String codigo, String nombre, String descripcion) {

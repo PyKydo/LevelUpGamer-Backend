@@ -46,6 +46,7 @@ class CarritoE2ETest {
         private final ObjectMapper objectMapper;
 
         private Usuario usuario;
+        private Usuario vendedor;
         private Producto producto;
         private String clienteToken;
 
@@ -86,6 +87,18 @@ class CarritoE2ETest {
                                 .build();
                 usuarioRepository.saveAndFlush(usuario);
 
+                vendedor = Usuario.builder()
+                                .run("66" + uniqueId)
+                                .nombre("Vendedor Carrito")
+                                .apellidos("Propietario")
+                                .correo("vendor-carrito-" + uniqueId + "@gmail.com")
+                                .contrasena(passwordEncoder.encode("vend1234"))
+                                .fechaNacimiento(LocalDate.now().minusYears(28))
+                                .roles(Set.of(RolUsuario.VENDEDOR))
+                                .activo(true)
+                                .build();
+                usuarioRepository.saveAndFlush(vendedor);
+
                 
                 LoginRequest loginRequest = LoginRequest.builder()
                                 .correo(usuario.getCorreo())
@@ -113,6 +126,7 @@ class CarritoE2ETest {
                 producto.setStock(100);
                 producto.setCodigo("P" + uniqueId);
                 producto.setCategoria(categoria);
+                producto.setVendedor(vendedor);
                 producto = productoRepository.saveAndFlush(producto);
         }
 

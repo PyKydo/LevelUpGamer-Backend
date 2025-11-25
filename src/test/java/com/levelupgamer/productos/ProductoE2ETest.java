@@ -6,6 +6,7 @@ import com.levelupgamer.autenticacion.LoginRequest;
 import com.levelupgamer.common.storage.FileStorageService;
 import com.levelupgamer.productos.categorias.Categoria;
 import com.levelupgamer.productos.categorias.CategoriaRepository;
+import com.levelupgamer.productos.dto.ProductoRequest;
 import com.levelupgamer.usuarios.RolUsuario;
 import com.levelupgamer.usuarios.Usuario;
 import com.levelupgamer.usuarios.UsuarioRepository;
@@ -32,6 +33,7 @@ import java.util.UUID;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.anyLong;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -108,14 +110,15 @@ class ProductoE2ETest {
         @Test
         void deberiaCrearYListarProductos() throws Exception {
                 
-                Producto newProduct = Producto.builder()
+                ProductoRequest newProduct = ProductoRequest.builder()
                                 .codigo("E2E-001")
                                 .nombre("Producto de Prueba E2E")
                                 .descripcion("Descripción del producto de prueba")
                                 .precio(new BigDecimal("99.99"))
                                 .stock(100)
                                 .stockCritico(10)
-                                .categoria(categoriaDefault)
+                                .categoriaId(categoriaDefault.getId())
+                                .puntosLevelUp(200)
                                 .imagenes(Collections.singletonList("http://example.com/image.jpg"))
                                 .build();
 
@@ -147,5 +150,80 @@ class ProductoE2ETest {
                                 .andExpect(status().isOk())
                                 .andExpect(jsonPath("$").isArray())
                                 .andExpect(jsonPath("$[?(@.codigo=='E2E-001')]").exists());
+        }
+
+        @Test
+        void vendedorNoPuedeEliminarProductoDeOtroVendedor() throws Exception {
+                String uniqueIdProducto = UUID.randomUUID().toString().substring(0, 8);
+
+                ProductoRequest newProduct = ProductoRequest.builder()
+                                .codigo("E2E-OWN-" + uniqueIdProducto)
+                                .nombre("Producto Corporativo")
+                                .descripcion("Producto sembrado para validación de ownership")
+                                .precio(new BigDecimal("49.99"))
+                                .stock(5)
+                                .stockCritico(1)
+                                .categoriaId(categoriaDefault.getId())
+                                .puntosLevelUp(200)
+                                .imagenes(Collections.singletonList("http://example.com/image.jpg"))
+                                .build();
+
+                MockMultipartFile productoPart = new MockMultipartFile(
+                                "producto",
+                                "producto.json",
+                                MediaType.APPLICATION_JSON_VALUE,
+                                objectMapper.writeValueAsBytes(newProduct));
+
+                MockMultipartFile imagenPart = new MockMultipartFile(
+                                "imagen",
+                                "imagen.jpg",
+                                MediaType.IMAGE_JPEG_VALUE,
+                                "fake-image-content".getBytes());
+
+                when(fileStorageService.uploadFile(any(), any(), anyLong())).thenReturn("/uploads/e2e.jpg");
+
+                MvcResult creationResult = mockMvc.perform(multipart("/api/v1/products")
+                                .file(productoPart)
+                                .file(imagenPart)
+                                .header("Authorization", "Bearer " + adminToken))
+                                .andExpect(status().isOk())
+                                .andReturn();
+
+                JsonNode creationJson = objectMapper.readTree(creationResult.getResponse().getContentAsString());
+                long productId = creationJson.get("id").asLong();
+
+                String vendorPassword = "vend1234";
+                Usuario vendor = Usuario.builder()
+                                .run("77777777-7")
+                                .nombre("Carlos")
+                                .apellidos("Vendedor")
+                                .correo("vendor-" + uniqueIdProducto + "@example.com")
+                                .contrasena(passwordEncoder.encode(vendorPassword))
+                                .fechaNacimiento(LocalDate.now().minusYears(25))
+                                .roles(Set.of(RolUsuario.VENDEDOR))
+                                .activo(true)
+                                .build();
+                usuarioRepository.save(vendor);
+
+                LoginRequest vendorLogin = LoginRequest.builder()
+                                .correo(vendor.getCorreo())
+                                .contrasena(vendorPassword)
+                                .rol(RolUsuario.VENDEDOR)
+                                .build();
+
+                String vendorToken = mockMvc.perform(post("/api/v1/auth/login")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(vendorLogin)))
+                                .andExpect(status().isOk())
+                                .andReturn()
+                                .getResponse()
+                                .getContentAsString();
+
+                JsonNode vendorLoginJson = objectMapper.readTree(vendorToken);
+                String vendorAccessToken = vendorLoginJson.get("accessToken").asText();
+
+                mockMvc.perform(delete("/api/v1/products/" + productId)
+                                .header("Authorization", "Bearer " + vendorAccessToken))
+                                .andExpect(status().isForbidden());
         }
 }

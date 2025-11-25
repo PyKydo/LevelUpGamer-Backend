@@ -64,6 +64,7 @@ class BoletaE2ETest {
         private Long clienteId;
         private Producto producto;
         private Categoria categoria;
+        private Usuario vendedor;
 
         @BeforeEach
         @Transactional
@@ -82,6 +83,18 @@ class BoletaE2ETest {
                                 .build();
                 usuarioRepository.saveAndFlush(cliente);
                 clienteId = cliente.getId();
+
+                vendedor = Usuario.builder()
+                                .run("66" + uniqueId)
+                                .nombre("Vendedor Boleta")
+                                .apellidos("Propietario")
+                                .correo("vendedor-" + uniqueId + "@gmail.com")
+                                .contrasena(passwordEncoder.encode("vend1234"))
+                                .fechaNacimiento(LocalDate.now().minusYears(30))
+                                .roles(Set.of(RolUsuario.VENDEDOR))
+                                .activo(true)
+                                .build();
+                usuarioRepository.saveAndFlush(vendedor);
 
                 categoria = categoriaRepository.save(Categoria.builder()
                                 .codigo("CAT-" + uniqueId)
@@ -111,6 +124,7 @@ class BoletaE2ETest {
                                 .stock(20)
                                 .categoria(categoria)
                                 .activo(true)
+                                .vendedor(vendedor)
                                 .build();
                 productoRepository.saveAndFlush(producto);
         }

@@ -7,6 +7,7 @@ import com.levelupgamer.usuarios.Usuario;
 import com.levelupgamer.usuarios.UsuarioRepository;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Profile;
+import org.springframework.core.annotation.Order;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,6 +17,7 @@ import java.util.HashSet;
 
 @Component
 @Profile("!test")
+@Order(1)
 public class DataInitializer implements CommandLineRunner {
 
     private final UsuarioRepository usuarioRepository;

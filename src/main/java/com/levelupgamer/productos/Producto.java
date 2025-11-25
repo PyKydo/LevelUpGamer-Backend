@@ -1,6 +1,8 @@
 package com.levelupgamer.productos;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.levelupgamer.productos.categorias.Categoria;
+import com.levelupgamer.usuarios.Usuario;
 import com.levelupgamer.validation.StepValue;
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
@@ -84,6 +86,12 @@ public class Producto {
     @CollectionTable(name = "producto_imagenes", joinColumns = @JoinColumn(name = "producto_id"))
     @Column(name = "imagen_url")
     private List<String> imagenes;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "vendedor_id", nullable = false, updatable = false)
+    @NotNull
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    private Usuario vendedor;
 
     
     @Builder.Default

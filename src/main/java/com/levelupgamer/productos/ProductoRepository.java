@@ -8,5 +8,6 @@ public interface ProductoRepository extends JpaRepository<Producto, Long> {
     Optional<Producto> findByCodigo(String codigo);
     boolean existsByCodigo(String codigo);
     List<Producto> findTop5ByActivoTrueOrderByPuntosLevelUpDesc();
+    List<Producto> findAllByVendedorId(Long vendedorId);
 }
 

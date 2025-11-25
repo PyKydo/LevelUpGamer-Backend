@@ -23,4 +23,5 @@ public class ProductoDTO {
     private Integer puntosLevelUp;
     private List<String> imagenes;
     private Boolean activo;
+    private VendedorResumenDTO vendedor;
 }
