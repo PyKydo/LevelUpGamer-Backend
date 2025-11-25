@@ -88,7 +88,7 @@ public class Producto {
     private List<String> imagenes;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "vendedor_id", nullable = false, updatable = false)
+    @JoinColumn(name = "usuario_id", nullable = false, updatable = false)
     @NotNull
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private Usuario vendedor;
