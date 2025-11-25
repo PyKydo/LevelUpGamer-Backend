@@ -7,7 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/contact-messages")
+@RequestMapping("/api/v1/contact-messages")
 public class ContactoController {
     @Autowired
     private ContactoService contactoService;

@@ -10,7 +10,7 @@ import org.springframework.web.client.RestTemplate;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/blog-posts")
+@RequestMapping("/api/v1/blog-posts")
 public class BlogController {
     @Autowired
     private BlogService blogService;

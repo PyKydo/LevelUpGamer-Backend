@@ -46,7 +46,7 @@ class AutenticacionE2ETest {
                 .direccion("Calle Falsa 123")
                 .build();
 
-        mockMvc.perform(post("/api/users/register")
+        mockMvc.perform(post("/api/v1/users/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(newUser)))
                 .andExpect(status().isOk())
@@ -57,7 +57,7 @@ class AutenticacionE2ETest {
         loginRequest.setCorreo("e2e.tester@gmail.com");
         loginRequest.setContrasena("pass12345");
 
-        mockMvc.perform(post("/api/auth/login")
+        mockMvc.perform(post("/api/v1/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(loginRequest)))
                 .andExpect(status().isOk())
@@ -80,7 +80,7 @@ class AutenticacionE2ETest {
                 .direccion("Calle Verdadera 123")
                 .build();
 
-        mockMvc.perform(post("/api/users/register")
+        mockMvc.perform(post("/api/v1/users/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(newUser)))
                 .andExpect(status().isOk());
@@ -90,7 +90,7 @@ class AutenticacionE2ETest {
         loginRequest.setCorreo("change.pass@gmail.com");
         loginRequest.setContrasena("pass1234");
 
-        MvcResult loginResult = mockMvc.perform(post("/api/auth/login")
+        MvcResult loginResult = mockMvc.perform(post("/api/v1/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(loginRequest)))
                 .andExpect(status().isOk())
@@ -106,7 +106,7 @@ class AutenticacionE2ETest {
                 .newPassword("nueva123")
                 .build();
 
-        mockMvc.perform(post("/api/auth/change-password")
+        mockMvc.perform(post("/api/v1/auth/change-password")
                         .header("Authorization", "Bearer " + accessToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(changePasswordRequest)))
@@ -117,7 +117,7 @@ class AutenticacionE2ETest {
         loginConAntigua.setCorreo("change.pass@gmail.com");
         loginConAntigua.setContrasena("pass1234");
 
-        mockMvc.perform(post("/api/auth/login")
+        mockMvc.perform(post("/api/v1/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(loginConAntigua)))
                 .andExpect(status().is4xxClientError());
@@ -127,7 +127,7 @@ class AutenticacionE2ETest {
         loginConNueva.setCorreo("change.pass@gmail.com");
         loginConNueva.setContrasena("nueva123");
 
-        mockMvc.perform(post("/api/auth/login")
+        mockMvc.perform(post("/api/v1/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(loginConNueva)))
                 .andExpect(status().isOk())
@@ -149,7 +149,7 @@ class AutenticacionE2ETest {
                 .direccion("Otra Calle 123")
                 .build();
 
-        mockMvc.perform(post("/api/users/register")
+        mockMvc.perform(post("/api/v1/users/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(newUser)))
                 .andExpect(status().isOk());
@@ -159,7 +159,7 @@ class AutenticacionE2ETest {
         loginRequest.setCorreo("change.pass2@gmail.com");
         loginRequest.setContrasena("pass1234");
 
-        MvcResult loginResult = mockMvc.perform(post("/api/auth/login")
+        MvcResult loginResult = mockMvc.perform(post("/api/v1/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(loginRequest)))
                 .andExpect(status().isOk())
@@ -175,7 +175,7 @@ class AutenticacionE2ETest {
                 .newPassword("nueva123")
                 .build();
 
-        mockMvc.perform(post("/api/auth/change-password")
+        mockMvc.perform(post("/api/v1/auth/change-password")
                         .header("Authorization", "Bearer " + accessToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(changePasswordRequest)))
@@ -197,7 +197,7 @@ class AutenticacionE2ETest {
                 .direccion("Otra Calle 456")
                 .build();
 
-        mockMvc.perform(post("/api/users/register")
+        mockMvc.perform(post("/api/v1/users/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(newUser)))
                 .andExpect(status().isOk());
@@ -207,7 +207,7 @@ class AutenticacionE2ETest {
         loginRequest.setCorreo("change.pass3@gmail.com");
         loginRequest.setContrasena("pass1234");
 
-        MvcResult loginResult = mockMvc.perform(post("/api/auth/login")
+        MvcResult loginResult = mockMvc.perform(post("/api/v1/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(loginRequest)))
                 .andExpect(status().isOk())
@@ -223,7 +223,7 @@ class AutenticacionE2ETest {
                 .newPassword("123")
                 .build();
 
-        mockMvc.perform(post("/api/auth/change-password")
+        mockMvc.perform(post("/api/v1/auth/change-password")
                         .header("Authorization", "Bearer " + accessToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(changePasswordRequest)))

@@ -71,7 +71,7 @@ class UsuarioE2ETest {
                                 .correo(cliente.getCorreo())
                                 .contrasena("user123")
                                 .build();
-                MvcResult result = mockMvc.perform(post("/api/auth/login")
+                MvcResult result = mockMvc.perform(post("/api/v1/auth/login")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(loginRequest)))
                                 .andExpect(status().isOk())
@@ -82,7 +82,7 @@ class UsuarioE2ETest {
 
         @Test
         void deberiaObtenerYActualizarPerfilDeUsuario() throws Exception {
-                mockMvc.perform(get("/api/users/" + clienteId)
+                mockMvc.perform(get("/api/v1/users/" + clienteId)
                                 .header("Authorization", "Bearer " + clienteToken))
                                 .andExpect(status().isOk())
                                 .andExpect(jsonPath("$.id").value(clienteId));
@@ -95,7 +95,7 @@ class UsuarioE2ETest {
                                 .comuna("Providencia")
                                 .build();
 
-                mockMvc.perform(put("/api/users/" + clienteId)
+                mockMvc.perform(put("/api/v1/users/" + clienteId)
                                 .header("Authorization", "Bearer " + clienteToken)
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(updateDTO)))

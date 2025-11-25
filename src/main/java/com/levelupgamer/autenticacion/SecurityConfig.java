@@ -36,20 +36,20 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 
                 .requestMatchers(HttpMethod.GET, "/").permitAll() 
-                .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
-                .requestMatchers(HttpMethod.POST, "/api/auth/refresh").permitAll()
-                .requestMatchers(HttpMethod.POST, "/api/users/register").permitAll() 
-                .requestMatchers("/api/blog-posts/**", "/api/contact-messages/**", "/v3/api-docs/**", "/swagger-ui/**").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/v1/auth/login").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/v1/auth/refresh").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/v1/users/register").permitAll() 
+                .requestMatchers("/api/v1/blog-posts/**", "/api/v1/contact-messages/**", "/v3/api-docs/**", "/swagger-ui/**").permitAll()
                 
                 
-                .requestMatchers("/api/users/roles").hasRole("ADMINISTRADOR")
+                .requestMatchers("/api/v1/users/roles").hasRole("ADMINISTRADOR")
 
                 
-                .requestMatchers(HttpMethod.GET, "/api/users/{id}").authenticated()
-                .requestMatchers(HttpMethod.PUT, "/api/users/{id}").authenticated()
-                .requestMatchers("/api/products/**").hasAnyRole("ADMINISTRADOR", "CLIENTE")
+                .requestMatchers(HttpMethod.GET, "/api/v1/users/{id}").authenticated()
+                .requestMatchers(HttpMethod.PUT, "/api/v1/users/{id}").authenticated()
+                .requestMatchers("/api/v1/products/**").hasAnyRole("ADMINISTRADOR", "CLIENTE")
                 .requestMatchers("/api/v1/boletas/**").hasAnyRole("ADMINISTRADOR", "CLIENTE")
-                .requestMatchers("/api/points/**").authenticated()
+                .requestMatchers("/api/v1/points/**").authenticated()
 
                 
                 .anyRequest().authenticated()

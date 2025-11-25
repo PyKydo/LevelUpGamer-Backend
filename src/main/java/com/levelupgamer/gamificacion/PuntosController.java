@@ -7,7 +7,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/points")
+@RequestMapping("/api/v1/points")
 public class PuntosController {
     @Autowired
     private PuntosService puntosService;

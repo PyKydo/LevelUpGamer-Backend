@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/points")
+@RequestMapping("/api/v1/points")
 @RequiredArgsConstructor
 public class CuponController {
 

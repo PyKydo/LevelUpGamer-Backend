@@ -80,7 +80,7 @@ class ProductoE2ETest {
                                 .contrasena("admin123")
                                 .build();
 
-                MvcResult result = mockMvc.perform(post("/api/auth/login")
+                MvcResult result = mockMvc.perform(post("/api/v1/auth/login")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(loginRequest)))
                                 .andExpect(status().isOk())
@@ -120,7 +120,7 @@ class ProductoE2ETest {
 
                 when(fileStorageService.uploadFile(any(), any(), anyLong())).thenReturn("/uploads/e2e.jpg");
 
-                mockMvc.perform(multipart("/api/products")
+                mockMvc.perform(multipart("/api/v1/products")
                                 .file(productoPart)
                                 .file(imagenPart)
                                 .header("Authorization", "Bearer " + adminToken))
@@ -128,7 +128,7 @@ class ProductoE2ETest {
                                 .andExpect(jsonPath("$.codigo").value("E2E-001"));
 
                 
-                mockMvc.perform(get("/api/products")
+                mockMvc.perform(get("/api/v1/products")
                                 .header("Authorization", "Bearer " + adminToken))
                                 .andExpect(status().isOk())
                                 .andExpect(jsonPath("$").isArray())

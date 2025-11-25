@@ -72,7 +72,7 @@ class GamificacionE2ETest {
                                 .correo(cliente.getCorreo())
                                 .contrasena("gami123")
                                 .build();
-                MvcResult result = mockMvc.perform(post("/api/auth/login")
+                MvcResult result = mockMvc.perform(post("/api/v1/auth/login")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(loginRequest)))
                                 .andExpect(status().isOk())
@@ -84,14 +84,14 @@ class GamificacionE2ETest {
         @Test
         void deberiaObtenerYModificarPuntosDeUsuario() throws Exception {
                 
-                mockMvc.perform(get("/api/points/" + clienteId)
+                mockMvc.perform(get("/api/v1/points/" + clienteId)
                                 .header("Authorization", "Bearer " + clienteToken))
                                 .andExpect(status().isOk())
                                 .andExpect(jsonPath("$.puntosAcumulados").value(0));
 
                 
                 PuntosDTO earnPointsDTO = new PuntosDTO(clienteId, 100);
-                mockMvc.perform(post("/api/points/earn")
+                mockMvc.perform(post("/api/v1/points/earn")
                                 .header("Authorization", "Bearer " + clienteToken)
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(earnPointsDTO)))
@@ -100,7 +100,7 @@ class GamificacionE2ETest {
 
                 
                 PuntosDTO redeemPointsDTO = new PuntosDTO(clienteId, 30);
-                mockMvc.perform(post("/api/points/redeem")
+                mockMvc.perform(post("/api/v1/points/redeem")
                                 .header("Authorization", "Bearer " + clienteToken)
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(redeemPointsDTO)))

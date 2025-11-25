@@ -6,7 +6,7 @@ Backend monolito modular para la tienda LevelUpGamer, construido con Java 21 y S
 
 - **Usuarios y roles**: registro con validaciones de RUN y dominios permitidos, contraseñas hasheadas con BCrypt y roles `ADMINISTRADOR` y `CLIENTE`.
 - **Autenticación JWT**: login con selección explícita de rol cuando un usuario posee múltiples perfiles, emisión de tokens de acceso y refresh + endpoint de cambio de contraseña.
-- **Catálogo y stock**: CRUD de productos, carga de imágenes a S3, alertas de stock crítico en logs, campo `puntosLevelUp` (0-1000 en saltos de 100) para gamificación y endpoint de destacados (`GET /api/products/featured`).
+- **Catálogo y stock**: CRUD de productos, carga de imágenes a S3, alertas de stock crítico en logs, campo `puntosLevelUp` (0-1000 en saltos de 100) para gamificación y endpoint de destacados (`GET /api/v1/products/featured`).
 - **Carrito persistente + Pedidos**: carritos por usuario, generación de pedidos que descuentan stock, calculan subtotales y asignan puntos multiplicando `producto.puntosLevelUp * cantidad`; soporte para descuentos combinados (20% correos Duoc + cupones con tope 90%).
 - **Contenido**: blogs con cabeceras e imágenes almacenadas en S3 y recuperación del contenido en formato Markdown; formulario de contacto persistido en BD.
 - **Programa de puntos y referidos**: saldo de puntos en tabla dedicada (`Puntos`) con operaciones de earn/redeem, acumulación basada en atributos `puntosLevelUp`, conversión de puntos a cupones (%5-%30) y bonificación automática a referidos en el registro.
@@ -25,7 +25,7 @@ Backend monolito modular para la tienda LevelUpGamer, construido con Java 21 y S
 
 ## Arquitectura por Dominios
 
-Cada dominio vive bajo `com.levelupgamer.{dominio}` y expone controladores REST bajo `/api/{dominio}`:
+Cada dominio vive bajo `com.levelupgamer.{dominio}` y expone controladores REST bajo `/api/v1/{dominio}`:
 
 - `autenticacion`: login, refresh, cambio de contraseña, configuración de seguridad y filtros JWT.
 - `usuarios`: entidades, DTOs, mappers y servicios para usuarios, roles y referidos.
@@ -79,9 +79,9 @@ Consulta `docs/personal/DEPLOYMENT.md` para el detalle de `EnvironmentFile` y el
 
 - Filtro `JwtAutenticacionFilter` agrega `SecurityContext` a partir del header `Authorization: Bearer <token>`.
 - `SecurityConfig` habilita CORS global (`*`) y define accesos:
-  - Público: `/`, `/api/auth/login`, `/api/auth/refresh`, `/api/users/register`, `/api/blog-posts/**`, `/api/contact-messages`, `/swagger-ui/**`, `/v3/api-docs/**`.
-  - Requiere autenticación: `/api/users/{id}`, `/api/products/**`, `/api/v1/boletas/**`, `/api/points/**`, `/api/cart/**`, `/api/reviews/**`.
-  - Solo admins: `/api/users`, `/api/users/roles`, `/api/users/admin`, mutaciones de productos y blogs.
+  - Público: `/`, `/api/v1/auth/login`, `/api/v1/auth/refresh`, `/api/v1/users/register`, `/api/v1/blog-posts/**`, `/api/v1/contact-messages`, `/swagger-ui/**`, `/v3/api-docs/**`.
+  - Requiere autenticación: `/api/v1/users/{id}`, `/api/v1/products/**`, `/api/v1/boletas/**`, `/api/v1/points/**`, `/api/v1/cart/**`, `/api/v1/reviews/**`.
+  - Solo admins: `/api/v1/users`, `/api/v1/users/roles`, `/api/v1/users/admin`, mutaciones de productos y blogs.
 - Errores se devuelven como `{ "error": "mensaje" }` o mapas campo -> error en validaciones.
 
 ## Pruebas

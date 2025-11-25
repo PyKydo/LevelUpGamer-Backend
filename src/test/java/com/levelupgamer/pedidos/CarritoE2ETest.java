@@ -85,7 +85,7 @@ class CarritoE2ETest {
                                 .correo(usuario.getCorreo())
                                 .contrasena("cliente")
                                 .build();
-                MvcResult result = mockMvc.perform(post("/api/auth/login")
+                MvcResult result = mockMvc.perform(post("/api/v1/auth/login")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(loginRequest)))
                                 .andExpect(status().isOk())
@@ -106,7 +106,7 @@ class CarritoE2ETest {
 
         @Test
         void getCartByUserId_debeCrearYRetornarCarritoVacio() throws Exception {
-                mockMvc.perform(get("/api/cart/{userId}", usuario.getId())
+                mockMvc.perform(get("/api/v1/cart/{userId}", usuario.getId())
                                 .header("Authorization", "Bearer " + clienteToken))
                                 .andExpect(status().isOk())
                                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
@@ -117,7 +117,7 @@ class CarritoE2ETest {
 
         @Test
         void addProductToCart_debeAgregarProductoYRetornarCarritoActualizado() throws Exception {
-                mockMvc.perform(post("/api/cart/{userId}/add", usuario.getId())
+                mockMvc.perform(post("/api/v1/cart/{userId}/add", usuario.getId())
                                 .header("Authorization", "Bearer " + clienteToken)
                                 .param("productId", producto.getId().toString())
                                 .param("quantity", "2"))
@@ -131,13 +131,13 @@ class CarritoE2ETest {
         @Test
         void removeProductFromCart_debeQuitarProductoYRetornarCarritoActualizado() throws Exception {
                 
-                mockMvc.perform(post("/api/cart/{userId}/add", usuario.getId())
+                mockMvc.perform(post("/api/v1/cart/{userId}/add", usuario.getId())
                                 .header("Authorization", "Bearer " + clienteToken)
                                 .param("productId", producto.getId().toString())
                                 .param("quantity", "1"));
 
                 
-                mockMvc.perform(delete("/api/cart/{userId}/remove", usuario.getId())
+                mockMvc.perform(delete("/api/v1/cart/{userId}/remove", usuario.getId())
                                 .header("Authorization", "Bearer " + clienteToken)
                                 .param("productId", producto.getId().toString()))
                                 .andExpect(status().isOk())
@@ -148,13 +148,13 @@ class CarritoE2ETest {
         @Test
         void clearCart_debeVaciarElCarrito() throws Exception {
                 
-                mockMvc.perform(post("/api/cart/{userId}/add", usuario.getId())
+                mockMvc.perform(post("/api/v1/cart/{userId}/add", usuario.getId())
                                 .header("Authorization", "Bearer " + clienteToken)
                                 .param("productId", producto.getId().toString())
                                 .param("quantity", "3"));
 
                 
-                mockMvc.perform(delete("/api/cart/{userId}", usuario.getId())
+                mockMvc.perform(delete("/api/v1/cart/{userId}", usuario.getId())
                                 .header("Authorization", "Bearer " + clienteToken))
                                 .andExpect(status().isOk())
                                 .andExpect(jsonPath("$.items", hasSize(0)))

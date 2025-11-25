@@ -82,7 +82,7 @@ class PedidoE2ETest {
                                 .correo(cliente.getCorreo())
                                 .contrasena("cliente")
                                 .build();
-                MvcResult result = mockMvc.perform(post("/api/auth/login")
+                MvcResult result = mockMvc.perform(post("/api/v1/auth/login")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(loginRequest)))
                                 .andExpect(status().isOk())

@@ -54,7 +54,7 @@ class ContenidoE2ETest {
         blogRepository.save(blog);
 
         
-        mockMvc.perform(get("/api/blog-posts"))
+        mockMvc.perform(get("/api/v1/blog-posts"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(1)))
                 .andExpect(jsonPath("$[0].titulo", is("Blog de Prueba E2E")));
@@ -70,7 +70,7 @@ class ContenidoE2ETest {
                 .build();
 
         
-        mockMvc.perform(post("/api/contact-messages")
+        mockMvc.perform(post("/api/v1/contact-messages")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(contactoDTO)))
                 .andExpect(status().isOk())

@@ -60,7 +60,7 @@ class BlogE2ETest {
         when(blogService.buscarPorId(1L)).thenReturn(Optional.of(blog));
         when(fileStorageService.readContentIfManaged(s3Url)).thenReturn(Optional.of(markdown));
 
-        mockMvc.perform(get("/api/blog-posts/1/content"))
+        mockMvc.perform(get("/api/v1/blog-posts/1/content"))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType("text/markdown; charset=UTF-8"))
                 .andExpect(content().string(markdown));
@@ -78,7 +78,7 @@ class BlogE2ETest {
         when(restTemplate.getForEntity(publicUrl, String.class))
                 .thenReturn(new ResponseEntity<>(markdown, HttpStatus.OK));
 
-        mockMvc.perform(get("/api/blog-posts/1/content"))
+        mockMvc.perform(get("/api/v1/blog-posts/1/content"))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType("text/markdown; charset=UTF-8"))
                 .andExpect(content().string(markdown));
@@ -88,7 +88,7 @@ class BlogE2ETest {
     void getBlogContent_blogNotFound_returns404() throws Exception {
         when(blogService.buscarPorId(1L)).thenReturn(Optional.empty());
 
-        mockMvc.perform(get("/api/blog-posts/1/content"))
+        mockMvc.perform(get("/api/v1/blog-posts/1/content"))
                 .andExpect(status().isNotFound());
     }
 }
