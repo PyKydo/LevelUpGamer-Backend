@@ -53,6 +53,7 @@ class BoletaServiceTest {
     private BoletaService boletaService;
 
     private Usuario usuario;
+    private Usuario vendedor;
     private Producto producto;
     private BoletaCrearDTO boletaCrearDTO;
 
@@ -64,6 +65,11 @@ class BoletaServiceTest {
         usuario.setId(1L);
         usuario.setCorreo("test@example.com");
 
+        vendedor = new Usuario();
+        vendedor.setId(2L);
+        vendedor.setCorreo("vendor@example.com");
+        vendedor.setNombre("Vendedor Test");
+
         producto = new Producto();
         producto.setId(1L);
         producto.setNombre("Producto Test");
@@ -71,6 +77,7 @@ class BoletaServiceTest {
         producto.setStock(10);
         producto.setStockCritico(5);
         producto.setPuntosLevelUp(100);
+        producto.setVendedor(vendedor);
 
         BoletaDetalleCrearDTO detalle = new BoletaDetalleCrearDTO();
         detalle.setProductoId(1L);

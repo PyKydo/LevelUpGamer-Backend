@@ -40,11 +40,18 @@ class ResenaServiceTest {
 
     private Producto producto;
     private Usuario usuario;
+    private Usuario vendedor;
 
     @BeforeEach
     void init() {
         producto = new Producto();
         producto.setId(10L);
+
+        vendedor = new Usuario();
+        vendedor.setId(99L);
+        vendedor.setNombre("Vendor Test");
+
+        producto.setVendedor(vendedor);
 
         usuario = Usuario.builder()
                 .id(5L)

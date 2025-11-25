@@ -35,6 +35,7 @@ class CarritoServiceTest {
     private CarritoService carritoService;
 
     private Usuario usuario;
+    private Usuario vendedor;
     private Producto producto;
     private Carrito carrito;
 
@@ -43,10 +44,16 @@ class CarritoServiceTest {
         usuario = new Usuario();
         usuario.setId(1L);
 
+        vendedor = new Usuario();
+        vendedor.setId(2L);
+        vendedor.setCorreo("vendor@test.com");
+        vendedor.setNombre("Vendedor Interno");
+
         producto = new Producto();
         producto.setId(1L);
         producto.setNombre("Test Product");
         producto.setPrecio(new java.math.BigDecimal("10.00"));
+        producto.setVendedor(vendedor);
 
         carrito = new Carrito(usuario);
         carrito.setId(1L);
