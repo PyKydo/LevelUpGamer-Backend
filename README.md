@@ -4,13 +4,14 @@ Backend monolito modular para la tienda LevelUpGamer, construido con Java 21 y S
 
 ## Características Principales
 
-- **Usuarios y roles**: registro con validaciones de RUN y dominios permitidos, contraseñas hasheadas con BCrypt y roles `ADMINISTRADOR`, `VENDEDOR` y `CLIENTE`.
+- **Usuarios y roles**: registro con validaciones de RUN y dominios permitidos, contraseñas hasheadas con BCrypt y roles `ADMINISTRADOR` y `CLIENTE`.
 - **Autenticación JWT**: login con selección explícita de rol cuando un usuario posee múltiples perfiles, emisión de tokens de acceso y refresh + endpoint de cambio de contraseña.
 - **Catálogo y stock**: CRUD de productos, carga de imágenes a S3, alertas de stock crítico en logs, campo `puntosLevelUp` (0-1000 en saltos de 100) para gamificación y endpoint de destacados (`GET /api/products/featured`).
-- **Carrito persistente + Pedidos**: carritos por usuario, generación de pedidos que descuentan stock, calculan subtotales y asignan puntos sumando `puntosLevelUp` de cada producto; soporte para descuentos combinados (20% correos Duoc + cupones con tope 90%).
+- **Carrito persistente + Pedidos**: carritos por usuario, generación de pedidos que descuentan stock, calculan subtotales y asignan puntos multiplicando `producto.puntosLevelUp * cantidad`; soporte para descuentos combinados (20% correos Duoc + cupones con tope 90%).
 - **Contenido**: blogs con cabeceras e imágenes almacenadas en S3 y recuperación del contenido en formato Markdown; formulario de contacto persistido en BD.
-- **Programa de puntos y referidos**: saldo de puntos en tabla dedicada (`Puntos`) con operaciones de earn/redeem, conversión de puntos a cupones (%5-%30) y bonificación automática a referidos en el registro.
-- **Reseñas**: publicación y listado de reseñas por producto (hoy cualquier usuario autenticado puede reseñar; la verificación de compra queda como mejora pendiente).
+- **Programa de puntos y referidos**: saldo de puntos en tabla dedicada (`Puntos`) con operaciones de earn/redeem, acumulación basada en atributos `puntosLevelUp`, conversión de puntos a cupones (%5-%30) y bonificación automática a referidos en el registro.
+- **Sistema de cupones**: conversión de puntos a cupones únicos, listado de opciones disponibles, verificación de pertenencia/estado y soporte de stacking controlado con el descuento Duoc.
+- **Reseñas verified purchase**: sólo usuarios con pedidos asociados al producto pueden reseñar (validado vía `PedidoRepository`), manteniendo listados paginados por producto.
 - **Observabilidad y documentación**: Swagger UI (`/swagger-ui/index.html`), Actuator y documentación funcional en `docs/personal`.
 
 ## Tecnologías y Dependencias Clave
@@ -40,8 +41,8 @@ Cada dominio vive bajo `com.levelupgamer.{dominio}` y expone controladores REST 
 - **Puerto por defecto**: `8081` (configurable vía `server.port`).
 - **Perfil activo estándar**: `dev` (H2 en memoria y consola H2 habilitada).
 - **Perfiles**:
-  - `dev`: H2 (`jdbc:h2:mem:testdb`), bucket/region definidos en `application-dev.properties` (actualizar `aws.s3.bucket.name`).
-  - `test`: H2 aislado + propiedades dummy para AWS (`application-test.properties`).
+  - `dev`: H2 (`jdbc:h2:mem:testdb`), bucket/region definidos en `application-dev.properties` y "safe defaults" que redirigen cargas a imágenes/payloads fallback (Picsum) sin necesidad de credenciales reales.
+  - `test`: H2 aislado + propiedades dummy para AWS (`application-test.properties`) que reutilizan los mismos fallbacks, permitiendo ejecutar suites sin configurar secretos.
   - `prod`: PostgreSQL via `DB_URL`, deshabilita Flyway temporalmente y toma bucket/region/credenciales desde variables de entorno.
 
 ### Variables de Entorno para `prod`
