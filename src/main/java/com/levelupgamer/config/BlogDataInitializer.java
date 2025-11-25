@@ -41,16 +41,15 @@ public class BlogDataInitializer implements CommandLineRunner {
         }
     }
 
+    @SuppressWarnings("null")
     private void createBlogs() {
-        String contentBase = resolveContentBase();
-
         // Blog 1
         Blog blog1 = Blog.builder()
                 .titulo("Los mejores juegos de mesa para una noche de diversión")
                 .autor("Matías Gutiérrez")
                 .fechaPublicacion(LocalDate.now())
                 .descripcionCorta("Descubre los juegos de mesa que no pueden faltar en tus reuniones.")
-                .contenidoUrl(contentBase + "blog1.md")
+            .contenidoUrl(buildContentUrl("blog1"))
                 .imagenUrl(buildImageUrl("blog1"))
                 .altImagen("Una selección de juegos de mesa sobre una mesa de madera.")
                 .build();
@@ -62,7 +61,7 @@ public class BlogDataInitializer implements CommandLineRunner {
                 .autor("Victor Mena")
                 .fechaPublicacion(LocalDate.now().minusDays(5))
                 .descripcionCorta("Una guía paso a paso para construir la computadora de tus sueños.")
-                .contenidoUrl(contentBase + "blog2.md")
+                .contenidoUrl(buildContentUrl("blog2"))
                 .imagenUrl(buildImageUrl("blog2"))
                 .altImagen("Componentes de una PC gamer listos para ser ensamblados.")
                 .build();
@@ -74,24 +73,24 @@ public class BlogDataInitializer implements CommandLineRunner {
                 .autor("David Larenas")
                 .fechaPublicacion(LocalDate.now().minusDays(10))
                 .descripcionCorta("Un viaje nostálgico a las consolas que marcaron una época.")
-                .contenidoUrl(contentBase + "blog3.md")
+                .contenidoUrl(buildContentUrl("blog3"))
                 .imagenUrl(buildImageUrl("blog3"))
                 .altImagen("Una colección de consolas de videojuegos retro.")
                 .build();
         blogRepository.save(blog3);
     }
 
-    private String resolveContentBase() {
+    private String buildContentUrl(String slug) {
         if (StringUtils.hasText(bucketName)) {
-            return "https://" + bucketName + ".s3.amazonaws.com/blogs/";
+            return "https://" + bucketName + ".s3.amazonaws.com/blogs/" + slug + "/blog.md";
         }
         Path basePath = Paths.get(localMarkdownDir).toAbsolutePath().normalize();
-        return basePath.toUri().toString();
+        return basePath.resolve(slug + ".md").toUri().toString();
     }
 
     private String buildImageUrl(String slug) {
         if (StringUtils.hasText(bucketName)) {
-            return "https://" + bucketName + ".s3.amazonaws.com/blogs/" + slug + ".jpg";
+            return "https://" + bucketName + ".s3.amazonaws.com/blogs/" + slug + "/blog.jpg";
         }
         return "https://picsum.photos/seed/levelupgamer-" + slug + "/1200/600";
     }
