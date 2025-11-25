@@ -5,9 +5,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.levelupgamer.autenticacion.LoginRequest;
 import com.levelupgamer.boletas.dto.BoletaCrearRequest;
 import com.levelupgamer.boletas.dto.BoletaDetalleRequest;
-import com.levelupgamer.productos.CategoriaProducto;
 import com.levelupgamer.productos.Producto;
 import com.levelupgamer.productos.ProductoRepository;
+import com.levelupgamer.productos.categorias.Categoria;
+import com.levelupgamer.productos.categorias.CategoriaRepository;
 import com.levelupgamer.usuarios.RolUsuario;
 import com.levelupgamer.usuarios.Usuario;
 import com.levelupgamer.usuarios.UsuarioRepository;
@@ -56,9 +57,13 @@ class BoletaE2ETest {
         @Autowired
         private BCryptPasswordEncoder passwordEncoder;
 
+        @Autowired
+        private CategoriaRepository categoriaRepository;
+
         private String clienteToken;
         private Long clienteId;
         private Producto producto;
+        private Categoria categoria;
 
         @BeforeEach
         @Transactional
@@ -77,6 +82,13 @@ class BoletaE2ETest {
                                 .build();
                 usuarioRepository.saveAndFlush(cliente);
                 clienteId = cliente.getId();
+
+                categoria = categoriaRepository.save(Categoria.builder()
+                                .codigo("CAT-" + uniqueId)
+                                .nombre("Categoria Boleta")
+                                .descripcion("Categoria usada en pruebas de boletas")
+                                .activo(true)
+                                .build());
 
                 
                 LoginRequest loginRequest = LoginRequest.builder()
@@ -97,7 +109,7 @@ class BoletaE2ETest {
                                 .nombre("Producto para Boleta")
                                 .precio(new BigDecimal("100.00"))
                                 .stock(20)
-                                .categoria(CategoriaProducto.CONSOLAS)
+                                .categoria(categoria)
                                 .activo(true)
                                 .build();
                 productoRepository.saveAndFlush(producto);

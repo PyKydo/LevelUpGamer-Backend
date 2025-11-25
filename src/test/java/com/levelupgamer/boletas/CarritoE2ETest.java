@@ -5,6 +5,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.levelupgamer.autenticacion.LoginRequest;
 import com.levelupgamer.productos.Producto;
 import com.levelupgamer.productos.ProductoRepository;
+import com.levelupgamer.productos.categorias.Categoria;
+import com.levelupgamer.productos.categorias.CategoriaRepository;
 import com.levelupgamer.usuarios.RolUsuario;
 import com.levelupgamer.usuarios.Usuario;
 import com.levelupgamer.usuarios.UsuarioRepository;
@@ -39,6 +41,7 @@ class CarritoE2ETest {
         private final UsuarioRepository usuarioRepository;
         private final ProductoRepository productoRepository;
         private final CarritoRepository carritoRepository;
+        private final CategoriaRepository categoriaRepository;
         private final BCryptPasswordEncoder passwordEncoder;
         private final ObjectMapper objectMapper;
 
@@ -49,12 +52,14 @@ class CarritoE2ETest {
         @Autowired
         public CarritoE2ETest(MockMvc mockMvc, UsuarioRepository usuarioRepository,
                         ProductoRepository productoRepository,
-                        CarritoRepository carritoRepository, BCryptPasswordEncoder passwordEncoder,
+                        CarritoRepository carritoRepository, CategoriaRepository categoriaRepository,
+                        BCryptPasswordEncoder passwordEncoder,
                         ObjectMapper objectMapper) {
                 this.mockMvc = mockMvc;
                 this.usuarioRepository = usuarioRepository;
                 this.productoRepository = productoRepository;
                 this.carritoRepository = carritoRepository;
+                this.categoriaRepository = categoriaRepository;
                 this.passwordEncoder = passwordEncoder;
                 this.objectMapper = objectMapper;
         }
@@ -95,13 +100,19 @@ class CarritoE2ETest {
                 clienteToken = root.get("accessToken").asText();
 
                 
+                Categoria categoria = categoriaRepository.save(Categoria.builder()
+                                .codigo("CAT-" + uniqueId)
+                                .nombre("Categoria Carrito")
+                                .descripcion("Categoria para pruebas de carrito")
+                                .activo(true)
+                                .build());
+
                 producto = new Producto();
                 producto.setNombre("Test Product");
                 producto.setPrecio(new java.math.BigDecimal("99.99"));
                 producto.setStock(100);
-                producto.setCodigo("P123");
-                
-                producto.setCategoria(com.levelupgamer.productos.CategoriaProducto.ACCESORIOS);
+                producto.setCodigo("P" + uniqueId);
+                producto.setCategoria(categoria);
                 producto = productoRepository.saveAndFlush(producto);
         }
 

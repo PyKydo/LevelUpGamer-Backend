@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.levelupgamer.autenticacion.LoginRequest;
 import com.levelupgamer.common.storage.FileStorageService;
+import com.levelupgamer.productos.categorias.Categoria;
+import com.levelupgamer.productos.categorias.CategoriaRepository;
 import com.levelupgamer.usuarios.RolUsuario;
 import com.levelupgamer.usuarios.Usuario;
 import com.levelupgamer.usuarios.UsuarioRepository;
@@ -39,6 +41,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 @Transactional
 @ActiveProfiles("test")
+@SuppressWarnings({"null", "removal"})
 class ProductoE2ETest {
 
         @Autowired
@@ -53,10 +56,14 @@ class ProductoE2ETest {
         @Autowired
         private BCryptPasswordEncoder passwordEncoder;
 
+        @Autowired
+        private CategoriaRepository categoriaRepository;
+
         @MockBean
         private FileStorageService fileStorageService;
 
         private String adminToken;
+        private Categoria categoriaDefault;
 
         @BeforeEach
         void setUp() throws Exception {
@@ -73,6 +80,13 @@ class ProductoE2ETest {
                                 .activo(true)
                                 .build();
                 usuarioRepository.save(admin);
+
+                categoriaDefault = categoriaRepository.save(Categoria.builder()
+                                .codigo("CAT-" + uniqueId)
+                                .nombre("Categoria Test")
+                                .descripcion("Categoria creada para pruebas e2e")
+                                .activo(true)
+                                .build());
 
                 
                 LoginRequest loginRequest = LoginRequest.builder()
@@ -101,7 +115,7 @@ class ProductoE2ETest {
                                 .precio(new BigDecimal("99.99"))
                                 .stock(100)
                                 .stockCritico(10)
-                                .categoria(CategoriaProducto.CONSOLAS)
+                                .categoria(categoriaDefault)
                                 .imagenes(Collections.singletonList("http://example.com/image.jpg"))
                                 .build();
 

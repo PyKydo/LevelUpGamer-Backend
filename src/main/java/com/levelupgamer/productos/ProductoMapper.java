@@ -1,5 +1,6 @@
 package com.levelupgamer.productos;
 
+import com.levelupgamer.productos.categorias.CategoriaMapper;
 import com.levelupgamer.productos.dto.ProductoDTO;
 
 public class ProductoMapper {
@@ -12,7 +13,7 @@ public class ProductoMapper {
         dto.setPrecio(p.getPrecio());
         dto.setStock(p.getStock());
         dto.setStockCritico(p.getStockCritico());
-        dto.setCategoria(p.getCategoria() != null ? p.getCategoria().name() : null);
+        dto.setCategoria(CategoriaMapper.toDTO(p.getCategoria()));
         dto.setPuntosLevelUp(p.getPuntosLevelUp());
         dto.setImagenes(p.getImagenes());
         dto.setActivo(p.getActivo());

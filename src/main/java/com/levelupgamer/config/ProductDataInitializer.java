@@ -1,12 +1,14 @@
 package com.levelupgamer.config;
 
-import com.levelupgamer.productos.CategoriaProducto;
 import com.levelupgamer.productos.Producto;
 import com.levelupgamer.productos.ProductoRepository;
+import com.levelupgamer.productos.categorias.Categoria;
+import com.levelupgamer.productos.categorias.CategoriaRepository;
 import java.math.BigDecimal;
 import java.util.Collections;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.core.annotation.Order;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -14,16 +16,19 @@ import org.springframework.util.StringUtils;
 
 @Component
 @Profile("!test")
+@Order(1)
 public class ProductDataInitializer implements CommandLineRunner {
 
-    private final ProductoRepository productoRepository;
+        private final ProductoRepository productoRepository;
+        private final CategoriaRepository categoriaRepository;
 
         @Value("${aws.s3.bucket.url:}")
-    private String s3BucketUrl;
+        private String s3BucketUrl;
 
-    public ProductDataInitializer(ProductoRepository productoRepository) {
-        this.productoRepository = productoRepository;
-    }
+        public ProductDataInitializer(ProductoRepository productoRepository, CategoriaRepository categoriaRepository) {
+                this.productoRepository = productoRepository;
+                this.categoriaRepository = categoriaRepository;
+        }
 
     @Override
     @Transactional
@@ -38,6 +43,23 @@ public class ProductDataInitializer implements CommandLineRunner {
 
         @SuppressWarnings("null")
         private void createProducts() {
+        Categoria juegosMesa = obtenerOCrearCategoria("JUEGOS_MESA", "Juegos de Mesa",
+                "Juegos de estrategia y mesa para toda la familia");
+        Categoria accesorios = obtenerOCrearCategoria("ACCESORIOS", "Accesorios",
+                "Periféricos y accesorios gamer");
+        Categoria consolas = obtenerOCrearCategoria("CONSOLAS", "Consolas",
+                "Consolas de última generación");
+        Categoria computadores = obtenerOCrearCategoria("COMPUTADORES_GAMERS", "Computadores Gamers",
+                "Equipos de alto rendimiento");
+        Categoria sillas = obtenerOCrearCategoria("SILLAS_GAMERS", "Sillas Gamers",
+                "Sillas ergonómicas para largas sesiones");
+        Categoria mouse = obtenerOCrearCategoria("MOUSE", "Mouse Gamer",
+                "Mouse diseñados para gaming");
+        Categoria mousepad = obtenerOCrearCategoria("MOUSEPAD", "Mousepad",
+                "Superficies para precisión");
+        Categoria poleras = obtenerOCrearCategoria("POLERAS_PERSONALIZADAS", "Poleras Personalizadas",
+                "Merchandising gamer personalizable");
+
         // JM001 - Catan
         Producto jm001 = Producto.builder()
                 .codigo("JM001")
@@ -46,7 +68,7 @@ public class ProductDataInitializer implements CommandLineRunner {
                 .precio(new BigDecimal("29990"))
                 .stock(15)
                 .stockCritico(5)
-                .categoria(CategoriaProducto.JUEGOS_DE_MESA)
+                .categoria(juegosMesa)
                 .puntosLevelUp(200)
                 .imagenes(Collections.singletonList(buildProductImage("JM001-catan.webp")))
                 .activo(true)
@@ -61,7 +83,7 @@ public class ProductDataInitializer implements CommandLineRunner {
                 .precio(new BigDecimal("24990"))
                 .stock(12)
                 .stockCritico(4)
-                .categoria(CategoriaProducto.JUEGOS_DE_MESA)
+                .categoria(juegosMesa)
                 .puntosLevelUp(200)
                 .imagenes(Collections.singletonList(buildProductImage("JM002-carcassonne.webp")))
                 .activo(true)
@@ -76,7 +98,7 @@ public class ProductDataInitializer implements CommandLineRunner {
                 .precio(new BigDecimal("59990"))
                 .stock(8)
                 .stockCritico(3)
-                .categoria(CategoriaProducto.ACCESORIOS)
+                .categoria(accesorios)
                 .puntosLevelUp(300)
                 .imagenes(Collections.singletonList(buildProductImage("AC001-xbox-controller.webp")))
                 .activo(true)
@@ -91,7 +113,7 @@ public class ProductDataInitializer implements CommandLineRunner {
             .precio(new BigDecimal("79990"))
             .stock(6)
             .stockCritico(2)
-            .categoria(CategoriaProducto.ACCESORIOS)
+            .categoria(accesorios)
             .puntosLevelUp(400)
             .imagenes(Collections.singletonList(buildProductImage("AC002-hyperx-cloud.webp")))
             .activo(true)
@@ -106,7 +128,7 @@ public class ProductDataInitializer implements CommandLineRunner {
                 .precio(new BigDecimal("549990"))
                 .stock(3)
                 .stockCritico(1)
-                .categoria(CategoriaProducto.CONSOLAS)
+                .categoria(consolas)
                 .puntosLevelUp(800)
                 .imagenes(Collections.singletonList(buildProductImage("CQ001-ps5.webp")))
                 .activo(true)
@@ -121,7 +143,7 @@ public class ProductDataInitializer implements CommandLineRunner {
                 .precio(new BigDecimal("1299990"))
                 .stock(2)
                 .stockCritico(1)
-                .categoria(CategoriaProducto.COMPUTADORES_GAMERS)
+                .categoria(computadores)
                 .puntosLevelUp(1000)
                 .imagenes(Collections.singletonList(buildProductImage("CG001-asus-rog.webp")))
                 .activo(true)
@@ -136,7 +158,7 @@ public class ProductDataInitializer implements CommandLineRunner {
                 .precio(new BigDecimal("349990"))
                 .stock(4)
                 .stockCritico(1)
-                .categoria(CategoriaProducto.SILLAS_GAMERS)
+                .categoria(sillas)
                 .puntosLevelUp(300)
                 .imagenes(Collections.singletonList(buildProductImage("SG001-secretlab-titan.webp")))
                 .activo(true)
@@ -151,7 +173,7 @@ public class ProductDataInitializer implements CommandLineRunner {
                 .precio(new BigDecimal("49990"))
                 .stock(10)
                 .stockCritico(3)
-                .categoria(CategoriaProducto.MOUSE)
+                .categoria(mouse)
                 .puntosLevelUp(200)
                 .imagenes(Collections.singletonList(buildProductImage("MS001-logitech-g502.webp")))
                 .activo(true)
@@ -166,7 +188,7 @@ public class ProductDataInitializer implements CommandLineRunner {
                 .precio(new BigDecimal("29990"))
                 .stock(15)
                 .stockCritico(5)
-                .categoria(CategoriaProducto.MOUSEPAD)
+                .categoria(mousepad)
                 .puntosLevelUp(100)
                 .imagenes(Collections.singletonList(buildProductImage("MP001-razer-goliathus.webp")))
                 .activo(true)
@@ -181,7 +203,7 @@ public class ProductDataInitializer implements CommandLineRunner {
                 .precio(new BigDecimal("14990"))
                 .stock(20)
                 .stockCritico(8)
-                .categoria(CategoriaProducto.POLERAS_PERSONALIZADAS)
+                .categoria(poleras)
                 .puntosLevelUp(100)
                                 .imagenes(Collections.singletonList(buildProductImage("PP001-levelup-tshirt.webp")))
                 .activo(true)
@@ -189,12 +211,30 @@ public class ProductDataInitializer implements CommandLineRunner {
         productoRepository.save(pp001);
     }
 
-        private String buildProductImage(String fileName) {
-                if (StringUtils.hasText(s3BucketUrl)) {
-                        String base = s3BucketUrl.endsWith("/") ? s3BucketUrl.substring(0, s3BucketUrl.length() - 1) : s3BucketUrl;
-                        return base + "/products/" + fileName;
-                }
-                String seed = fileName.replace('.', '-');
-                return "https://picsum.photos/seed/levelup-" + seed + "/800/800";
+    private String buildProductImage(String fileName) {
+        if (StringUtils.hasText(s3BucketUrl)) {
+            String base = s3BucketUrl.endsWith("/") ? s3BucketUrl.substring(0, s3BucketUrl.length() - 1) : s3BucketUrl;
+            return base + "/products/" + fileName;
         }
+        String seed = fileName.replace('.', '-');
+        return "https://picsum.photos/seed/levelup-" + seed + "/800/800";
+    }
+
+    @SuppressWarnings("null")
+    private Categoria obtenerOCrearCategoria(String codigo, String nombre, String descripcion) {
+        Categoria existente = categoriaRepository.findByCodigoIgnoreCase(codigo).orElse(null);
+        if (existente != null) {
+            return existente;
+        }
+
+        Categoria nueva = Categoria.builder()
+                .codigo(codigo)
+                .nombre(nombre)
+                .descripcion(descripcion)
+                .activo(true)
+                .build();
+        categoriaRepository.save(nueva);
+        return categoriaRepository.findByCodigoIgnoreCase(codigo)
+                .orElseThrow(() -> new IllegalStateException("No se pudo persistir la categoria " + codigo));
+    }
 }

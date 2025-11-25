@@ -1,25 +1,27 @@
 package com.levelupgamer.productos;
 
 import com.levelupgamer.common.storage.FileStorageService;
+import com.levelupgamer.productos.categorias.Categoria;
+import com.levelupgamer.productos.categorias.CategoriaRepository;
 import com.levelupgamer.productos.dto.ProductoDTO;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.multipart.MultipartFile;
-
 import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 @Service
+@RequiredArgsConstructor
+@SuppressWarnings("null")
 public class ProductoService {
-    @Autowired
-    private ProductoRepository productoRepository;
 
-    @Autowired
-    private FileStorageService fileStorageService;
+    private final ProductoRepository productoRepository;
+    private final FileStorageService fileStorageService;
+    private final CategoriaRepository categoriaRepository;
 
     @Transactional(readOnly = true)
     public List<ProductoDTO> listarProductos() {
@@ -34,7 +36,9 @@ public class ProductoService {
             throw new IllegalArgumentException("Código de producto ya existe");
         }
 
+        Categoria categoria = resolverCategoria(producto.getCategoria());
         producto.setPuntosLevelUp(normalizarPuntos(producto.getPuntosLevelUp()));
+        producto.setCategoria(categoria);
 
         if (imagen != null && !imagen.isEmpty()) {
             String imageUrl = fileStorageService.uploadFile(
@@ -62,7 +66,13 @@ public class ProductoService {
             producto.setPrecio(nuevo.getPrecio());
             producto.setStock(nuevo.getStock());
             producto.setStockCritico(nuevo.getStockCritico());
-            producto.setCategoria(nuevo.getCategoria());
+            Categoria categoria = null;
+            if (nuevo.getCategoria() != null && nuevo.getCategoria().getId() != null) {
+                categoria = resolverCategoria(nuevo.getCategoria());
+            }
+            if (categoria != null) {
+                producto.setCategoria(categoria);
+            }
             producto.setPuntosLevelUp(normalizarPuntos(nuevo.getPuntosLevelUp()));
             
             
@@ -100,5 +110,14 @@ public class ProductoService {
             throw new IllegalArgumentException("puntosLevelUp debe estar entre 0 y 1000 en incrementos de 100");
         }
         return puntos;
+    }
+
+    private Categoria resolverCategoria(Categoria categoriaPayload) {
+        if (categoriaPayload == null || categoriaPayload.getId() == null) {
+            throw new IllegalArgumentException("Debe especificar una categoría válida (categoria.id)");
+        }
+        return categoriaRepository.findById(categoriaPayload.getId())
+                .filter(Categoria::getActivo)
+                .orElseThrow(() -> new IllegalArgumentException("Categoría no encontrada o inactiva"));
     }
 }

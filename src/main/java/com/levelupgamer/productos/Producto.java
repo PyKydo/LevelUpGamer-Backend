@@ -1,14 +1,29 @@
 package com.levelupgamer.productos;
 
-import jakarta.persistence.*;
-import jakarta.validation.constraints.*;
+import com.levelupgamer.productos.categorias.Categoria;
+import com.levelupgamer.validation.StepValue;
+import jakarta.persistence.CollectionTable;
+import jakarta.persistence.Column;
+import jakarta.persistence.ElementCollection;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EntityListeners;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
-import com.levelupgamer.validation.StepValue;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.NoArgsConstructor;
@@ -53,9 +68,9 @@ public class Producto {
     @Min(0)
     private Integer stockCritico;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 50)
-    private CategoriaProducto categoria;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "categoria_id")
+    private Categoria categoria;
 
     @Column(nullable = false)
     @NotNull

@@ -1,6 +1,8 @@
 package com.levelupgamer.productos;
 
 import com.levelupgamer.common.storage.FileStorageService;
+import com.levelupgamer.productos.categorias.Categoria;
+import com.levelupgamer.productos.categorias.CategoriaRepository;
 import com.levelupgamer.productos.dto.ProductoDTO;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -20,6 +22,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.*;
 
+@SuppressWarnings("null")
 class ProductoServiceTest {
 
     @Mock
@@ -28,16 +31,26 @@ class ProductoServiceTest {
     @Mock
     private FileStorageService fileStorageService;
 
+    @Mock
+    private CategoriaRepository categoriaRepository;
+
     @InjectMocks
     private ProductoService productoService;
 
     private Producto producto;
     private ProductoDTO productoDTO;
+    private Categoria categoria;
 
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
         
+        categoria = new Categoria();
+        categoria.setId(10L);
+        categoria.setCodigo("CAT-TEST");
+        categoria.setNombre("Categoria Test");
+        categoria.setActivo(true);
+
         producto = new Producto();
         producto.setId(1L);
         producto.setCodigo("P001");
@@ -45,12 +58,14 @@ class ProductoServiceTest {
         producto.setActivo(true);
         producto.setPrecio(new BigDecimal("10.00"));
         producto.setImagenes(Collections.singletonList("http://example.com/test.jpg"));
+        producto.setCategoria(categoria);
 
         productoDTO = new ProductoDTO();
         productoDTO.setId(1L);
         productoDTO.setCodigo("P001");
         productoDTO.setNombre("Producto Test");
         productoDTO.setImagenes(Collections.singletonList("http://example.com/test.jpg"));
+        when(categoriaRepository.findById(categoria.getId())).thenReturn(Optional.of(categoria));
     }
 
     @Test

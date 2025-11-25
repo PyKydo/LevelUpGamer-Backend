@@ -1,7 +1,7 @@
 package com.levelupgamer.productos.dto;
 
-import java.math.BigDecimal;
-import java.util.List;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -11,16 +11,17 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class ProductoDTO {
-    private Long id;
+public class CategoriaRequest {
+    @NotBlank
+    @Size(max = 50)
     private String codigo;
+
+    @NotBlank
+    @Size(max = 120)
     private String nombre;
+
+    @Size(max = 255)
     private String descripcion;
-    private BigDecimal precio;
-    private Integer stock;
-    private Integer stockCritico;
-    private CategoriaDTO categoria;
-    private Integer puntosLevelUp;
-    private List<String> imagenes;
+
     private Boolean activo;
 }
