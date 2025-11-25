@@ -1,4 +1,4 @@
-package com.levelupgamer.pedidos;
+package com.levelupgamer.boletas;
 
 import com.levelupgamer.productos.Producto;
 import jakarta.persistence.*;

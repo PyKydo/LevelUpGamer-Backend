@@ -1,4 +1,4 @@
-package com.levelupgamer.pedidos.dto;
+package com.levelupgamer.boletas.dto;
 
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;

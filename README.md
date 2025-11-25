@@ -1,17 +1,19 @@
 # LevelUpGamer Backend
 
-Backend monolito modular para la tienda LevelUpGamer, construido con Java 21 y Spring Boot 3.5. La aplicación concentra autenticación JWT, catálogo de productos, carritos, pedidos, blogs, reseñas y gamificación en un único despliegue.
+Backend monolito modular para la tienda LevelUpGamer, construido con Java 21 y Spring Boot 3.5. La aplicación concentra autenticación JWT, catálogo de productos, carritos, boletas, blogs, reseñas y gamificación en un único despliegue.
+
+Todos los endpoints REST están versionados bajo el prefijo `/api/v1/...` (ej. `/api/v1/boletas`, `/api/v1/cart`, `/api/v1/products`).
 
 ## Características Principales
 
 - **Usuarios y roles**: registro con validaciones de RUN y dominios permitidos, contraseñas hasheadas con BCrypt y roles `ADMINISTRADOR` y `CLIENTE`.
 - **Autenticación JWT**: login con selección explícita de rol cuando un usuario posee múltiples perfiles, emisión de tokens de acceso y refresh + endpoint de cambio de contraseña.
 - **Catálogo y stock**: CRUD de productos, carga de imágenes a S3, alertas de stock crítico en logs, campo `puntosLevelUp` (0-1000 en saltos de 100) para gamificación y endpoint de destacados (`GET /api/v1/products/featured`).
-- **Carrito persistente + Pedidos**: carritos por usuario, generación de pedidos que descuentan stock, calculan subtotales y asignan puntos multiplicando `producto.puntosLevelUp * cantidad`; soporte para descuentos combinados (20% correos Duoc + cupones con tope 90%).
+- **Carrito persistente + Boletas**: carritos por usuario, generación de boletas (`POST /api/v1/boletas`) que descuentan stock, calculan subtotales y asignan puntos multiplicando `producto.puntosLevelUp * cantidad`; soporte para descuentos combinados (20% correos Duoc + cupones con tope 90%).
 - **Contenido**: blogs con cabeceras e imágenes almacenadas en S3 y recuperación del contenido en formato Markdown; formulario de contacto persistido en BD.
 - **Programa de puntos y referidos**: saldo de puntos en tabla dedicada (`Puntos`) con operaciones de earn/redeem, acumulación basada en atributos `puntosLevelUp`, conversión de puntos a cupones (%5-%30) y bonificación automática a referidos en el registro.
 - **Sistema de cupones**: conversión de puntos a cupones únicos, listado de opciones disponibles, verificación de pertenencia/estado y soporte de stacking controlado con el descuento Duoc.
-- **Reseñas verified purchase**: sólo usuarios con pedidos asociados al producto pueden reseñar (validado vía `PedidoRepository`), manteniendo listados paginados por producto.
+- **Reseñas verified purchase**: sólo usuarios con boletas asociadas al producto pueden reseñar (validado vía `BoletaRepository`), manteniendo listados paginados por producto.
 - **Observabilidad y documentación**: Swagger UI (`/swagger-ui/index.html`), Actuator y documentación funcional en `docs/personal`.
 
 ## Tecnologías y Dependencias Clave
@@ -30,7 +32,7 @@ Cada dominio vive bajo `com.levelupgamer.{dominio}` y expone controladores REST 
 - `autenticacion`: login, refresh, cambio de contraseña, configuración de seguridad y filtros JWT.
 - `usuarios`: entidades, DTOs, mappers y servicios para usuarios, roles y referidos.
 - `productos`: productos, categorías, reseñas, `puntosLevelUp` y seeding inicial (`ProductDataInitializer`).
-- `pedidos`: carritos persistentes, pedidos, DTOs y lógica de puntos/stock/alertas con descuentos compuestos y trazabilidad de cupones usados.
+- `boletas`: carritos persistentes, boletas, DTOs y lógica de puntos/stock/alertas con descuentos compuestos y trazabilidad de cupones usados.
 - `gamificacion`: entidad `Puntos`, repositorio y servicios de earn/redeem + módulo de cupones con conversión, listado y canje.
 - `contenido`: blogs (lectura desde S3), mensajes de contacto y seeds (`BlogDataInitializer`).
 - `common` y `config`: integraciones S3, validación, inicializadores y beans utilitarios.
@@ -70,9 +72,9 @@ Consulta `docs/personal/DEPLOYMENT.md` para el detalle de `EnvironmentFile` y el
 - Dominios permitidos para correo: `gmail.com`, `hotmail.com`, `outlook.com`, `yahoo.com`, `duoc.cl`, `profesor.duoc.cl`.
 - Edad mínima 18 años (`@Adult`).
 - Contraseñas entre 4 y 10 caracteres (pendiente extensión configurable).
-- Descuento 20% para correos `duoc.cl` / `profesor.duoc.cl` al generar pedidos.
+- Descuento 20% para correos `duoc.cl` / `profesor.duoc.cl` al generar boletas.
 - Stock crítico: log `WARN` cuando `stock <= stockCritico`.
-- Puntos LevelUp: cada producto define `puntosLevelUp` (0-1000, múltiplos de 100) que se multiplican por la cantidad al cerrar el pedido y se acumulan en `Puntos`.
+- Puntos LevelUp: cada producto define `puntosLevelUp` (0-1000, múltiplos de 100) que se multiplican por la cantidad al cerrar la boleta y se acumulan en `Puntos`.
 - Cupones: conversión de 500-3000 puntos a cupones del 5%-30% (saltos de 5), canjeables una sola vez y con tope global del 90% al combinar con el descuento Duoc.
 
 ## Seguridad y Autorización
@@ -87,7 +89,7 @@ Consulta `docs/personal/DEPLOYMENT.md` para el detalle de `EnvironmentFile` y el
 ## Pruebas
 
 - **Unitarias y de servicio**: ubicadas por dominio (`src/test/java/com/levelupgamer/{dominio}`) con Mockito y H2.
-- **E2E / integración**: `AutenticacionE2ETest`, `UsuarioE2ETest`, `ProductoE2ETest`, `PedidoE2ETest`, `CarritoE2ETest`, `ContenidoE2ETest`, `GamificacionE2ETest` ejecutan escenarios completos usando el perfil `test`.
+- **E2E / integración**: `AutenticacionE2ETest`, `UsuarioE2ETest`, `ProductoE2ETest`, `BoletaE2ETest`, `CarritoE2ETest`, `ContenidoE2ETest`, `GamificacionE2ETest` ejecutan escenarios completos usando el perfil `test`.
 - Ejecuta todo con `./mvnw verify` o `./mvnw test -Ptest`.
 
 ## Documentación y Utilidades

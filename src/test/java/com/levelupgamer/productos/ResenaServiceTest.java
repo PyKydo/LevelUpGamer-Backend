@@ -2,10 +2,9 @@ package com.levelupgamer.productos;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import java.util.Optional;
@@ -17,7 +16,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import com.levelupgamer.pedidos.PedidoRepository;
+import com.levelupgamer.boletas.BoletaRepository;
 import com.levelupgamer.usuarios.Usuario;
 import com.levelupgamer.usuarios.UsuarioRepository;
 
@@ -34,7 +33,7 @@ class ResenaServiceTest {
     private UsuarioRepository usuarioRepository;
 
     @Mock
-    private PedidoRepository pedidoRepository;
+    private BoletaRepository boletaRepository;
 
     @InjectMocks
     private ResenaService resenaService;
@@ -62,8 +61,8 @@ class ResenaServiceTest {
 
         when(productoRepository.findById(10L)).thenReturn(Optional.of(producto));
         when(usuarioRepository.findById(5L)).thenReturn(Optional.of(usuario));
-        when(pedidoRepository.existsByUsuarioIdAndItemsProductoId(5L, 10L)).thenReturn(true);
-        when(resenaRepository.save(any(Resena.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(boletaRepository.existsByUsuarioIdAndDetallesProductoId(5L, 10L)).thenReturn(true);
+        when(resenaRepository.save(resena)).thenReturn(resena);
 
         Resena guardada = resenaService.crearResena(10L, 5L, resena);
 
@@ -79,9 +78,9 @@ class ResenaServiceTest {
 
         when(productoRepository.findById(10L)).thenReturn(Optional.of(producto));
         when(usuarioRepository.findById(5L)).thenReturn(Optional.of(usuario));
-        when(pedidoRepository.existsByUsuarioIdAndItemsProductoId(5L, 10L)).thenReturn(false);
+        when(boletaRepository.existsByUsuarioIdAndDetallesProductoId(5L, 10L)).thenReturn(false);
 
         assertThrows(IllegalStateException.class, () -> resenaService.crearResena(10L, 5L, resena));
-        verify(resenaRepository, never()).save(any(Resena.class));
+        verifyNoInteractions(resenaRepository);
     }
 }

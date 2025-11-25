@@ -1,4 +1,4 @@
-package com.levelupgamer.pedidos;
+package com.levelupgamer.boletas;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
@@ -19,15 +19,15 @@ import lombok.Builder;
 @Builder
 @Entity
 @EntityListeners(AuditingEntityListener.class)
-public class PedidoItem {
+public class BoletaDetalle {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @ManyToOne
-    @JoinColumn(name = "pedido_id")
+    @JoinColumn(name = "boleta_id")
     @NotNull
-    private Pedido pedido;
+    private Boleta boleta;
 
     @ManyToOne
     @JoinColumn(name = "producto_id")
@@ -57,8 +57,8 @@ public class PedidoItem {
     
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
-    public Pedido getPedido() { return pedido; }
-    public void setPedido(Pedido pedido) { this.pedido = pedido; }
+    public Boleta getBoleta() { return boleta; }
+    public void setBoleta(Boleta boleta) { this.boleta = boleta; }
     public Producto getProducto() { return producto; }
     public void setProducto(Producto producto) { this.producto = producto; }
     public Integer getCantidad() { return cantidad; }

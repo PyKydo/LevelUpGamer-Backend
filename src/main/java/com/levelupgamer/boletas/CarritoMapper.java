@@ -1,7 +1,7 @@
-package com.levelupgamer.pedidos;
+package com.levelupgamer.boletas;
 
-import com.levelupgamer.pedidos.dto.CarritoDto;
-import com.levelupgamer.pedidos.dto.CarritoItemDto;
+import com.levelupgamer.boletas.dto.CarritoDto;
+import com.levelupgamer.boletas.dto.CarritoItemDto;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;

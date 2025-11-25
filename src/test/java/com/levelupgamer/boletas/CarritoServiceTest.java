@@ -1,6 +1,6 @@
-package com.levelupgamer.pedidos;
+package com.levelupgamer.boletas;
 
-import com.levelupgamer.pedidos.dto.CarritoDto;
+import com.levelupgamer.boletas.dto.CarritoDto;
 import com.levelupgamer.productos.Producto;
 import com.levelupgamer.productos.ProductoRepository;
 import com.levelupgamer.usuarios.Usuario;
@@ -18,6 +18,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 import static org.assertj.core.api.Assertions.assertThat;
 
+@SuppressWarnings("null")
 @ExtendWith(MockitoExtension.class)
 class CarritoServiceTest {
 

@@ -1,38 +1,41 @@
-package com.levelupgamer.pedidos;
+package com.levelupgamer.boletas;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
+
+import com.levelupgamer.boletas.dto.BoletaCrearDTO;
+import com.levelupgamer.boletas.dto.BoletaDetalleCrearDTO;
+import com.levelupgamer.boletas.dto.BoletaRespuestaDTO;
 import com.levelupgamer.gamificacion.PuntosService;
 import com.levelupgamer.gamificacion.cupones.Cupon;
 import com.levelupgamer.gamificacion.cupones.CuponService;
 import com.levelupgamer.gamificacion.cupones.EstadoCupon;
 import com.levelupgamer.gamificacion.dto.PuntosDTO;
-import com.levelupgamer.pedidos.dto.PedidoCrearDTO;
-import com.levelupgamer.pedidos.dto.PedidoItemCrearDTO;
-import com.levelupgamer.pedidos.dto.PedidoRespuestaDTO;
 import com.levelupgamer.productos.Producto;
 import com.levelupgamer.productos.ProductoRepository;
-import com.levelupgamer.usuarios.RolUsuario;
 import com.levelupgamer.usuarios.Usuario;
 import com.levelupgamer.usuarios.UsuarioRepository;
+import java.math.BigDecimal;
+import java.util.Collections;
+import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
-import java.math.BigDecimal;
-import java.util.Collections;
-import java.util.Optional;
-import java.util.Set;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
-
 @SuppressWarnings("null")
-class PedidoServiceTest {
+class BoletaServiceTest {
 
     @Mock
-    private PedidoRepository pedidoRepository;
+    private BoletaRepository boletaRepository;
 
     @Mock
     private UsuarioRepository usuarioRepository;
@@ -47,11 +50,11 @@ class PedidoServiceTest {
     private CuponService cuponService;
 
     @InjectMocks
-    private PedidoService pedidoService;
+    private BoletaService boletaService;
 
     private Usuario usuario;
     private Producto producto;
-    private PedidoCrearDTO pedidoCrearDTO;
+    private BoletaCrearDTO boletaCrearDTO;
 
     @BeforeEach
     void setUp() {
@@ -60,8 +63,6 @@ class PedidoServiceTest {
         usuario = new Usuario();
         usuario.setId(1L);
         usuario.setCorreo("test@example.com");
-        usuario.setIsDuocUser(false);
-        usuario.setRoles(Set.of(RolUsuario.CLIENTE));
 
         producto = new Producto();
         producto.setId(1L);
@@ -71,75 +72,67 @@ class PedidoServiceTest {
         producto.setStockCritico(5);
         producto.setPuntosLevelUp(100);
 
-        PedidoItemCrearDTO itemDTO = new PedidoItemCrearDTO();
-        itemDTO.setProductoId(1L);
-        itemDTO.setCantidad(2);
+        BoletaDetalleCrearDTO detalle = new BoletaDetalleCrearDTO();
+        detalle.setProductoId(1L);
+        detalle.setCantidad(2);
 
-        pedidoCrearDTO = new PedidoCrearDTO();
-        pedidoCrearDTO.setUsuarioId(1L);
-        pedidoCrearDTO.setItems(Collections.singletonList(itemDTO));
+        boletaCrearDTO = BoletaCrearDTO.builder()
+                .usuarioId(1L)
+                .detalles(Collections.singletonList(detalle))
+                .build();
     }
 
     @Test
-    void crearPedido_conDatosValidos_creaPedidoYActualizaStock() {
-        
+    void crearBoleta_conDatosValidos_creaBoletaYActualizaStock() {
         when(usuarioRepository.findById(1L)).thenReturn(Optional.of(usuario));
         when(productoRepository.findById(1L)).thenReturn(Optional.of(producto));
-        when(pedidoRepository.save(any(Pedido.class))).thenAnswer(invocation -> invocation.getArgument(0));
-        
-        
-        PedidoRespuestaDTO result = pedidoService.crearPedido(pedidoCrearDTO);
+        when(boletaRepository.save(any(Boleta.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        
+        BoletaRespuestaDTO result = boletaService.crearBoletaInterna(boletaCrearDTO);
+
         assertNotNull(result);
         assertEquals(new BigDecimal("200.00"), result.getTotalAntesDescuentos());
         assertEquals(new BigDecimal("200.00"), result.getTotal());
         assertEquals(8, producto.getStock());
-        
-        
+
         verify(puntosService, times(1)).sumarPuntos(new PuntosDTO(1L, 200));
         verify(productoRepository, times(1)).save(producto);
-        verify(pedidoRepository, times(1)).save(any(Pedido.class));
+        verify(boletaRepository, times(1)).save(any(Boleta.class));
         verifyNoInteractions(cuponService);
     }
 
     @Test
-    void crearPedido_conUsuarioDuoc_aplicaDescuento() {
-        
-        usuario.setIsDuocUser(true);
-        usuario.setCorreo("test@duoc.cl");
+    void crearBoleta_conUsuarioDuoc_aplicaDescuento() {
+        usuario.setCorreo("cliente@duoc.cl");
         when(usuarioRepository.findById(1L)).thenReturn(Optional.of(usuario));
         when(productoRepository.findById(1L)).thenReturn(Optional.of(producto));
-        when(pedidoRepository.save(any(Pedido.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(boletaRepository.save(any(Boleta.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        
-        PedidoRespuestaDTO result = pedidoService.crearPedido(pedidoCrearDTO);
+        BoletaRespuestaDTO result = boletaService.crearBoletaInterna(boletaCrearDTO);
 
-        
         assertNotNull(result);
         assertEquals(new BigDecimal("200.00"), result.getTotalAntesDescuentos());
         assertEquals(new BigDecimal("160.00"), result.getTotal());
         assertEquals(20, result.getDescuentoDuoc());
-        
-        
+
         verify(puntosService, times(1)).sumarPuntos(new PuntosDTO(1L, 200));
     }
 
     @Test
-    void crearPedido_conCuponAplicaDescuentoYLoMarcaUsado() {
+    void crearBoleta_conCupon_aplicaDescuentoYLoMarcaUsado() {
         Cupon cupon = new Cupon();
         cupon.setId(99L);
         cupon.setPorcentajeDescuento(10);
         cupon.setEstado(EstadoCupon.ACTIVO);
 
-        pedidoCrearDTO.setCuponId(99L);
+        boletaCrearDTO.setCuponId(99L);
 
         when(usuarioRepository.findById(1L)).thenReturn(Optional.of(usuario));
         when(productoRepository.findById(1L)).thenReturn(Optional.of(producto));
         when(cuponService.buscarCuponValido(1L, 99L, null)).thenReturn(Optional.of(cupon));
-        when(pedidoRepository.save(any(Pedido.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(boletaRepository.save(any(Boleta.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        PedidoRespuestaDTO result = pedidoService.crearPedido(pedidoCrearDTO);
+        BoletaRespuestaDTO result = boletaService.crearBoletaInterna(boletaCrearDTO);
 
         assertEquals(new BigDecimal("200.00"), result.getTotalAntesDescuentos());
         assertEquals(new BigDecimal("180.00"), result.getTotal());
@@ -150,15 +143,13 @@ class PedidoServiceTest {
     }
 
     @Test
-    void crearPedido_conStockInsuficiente_lanzaExcepcion() {
-        
+    void crearBoleta_conStockInsuficiente_lanzaExcepcion() {
         producto.setStock(1);
         when(usuarioRepository.findById(1L)).thenReturn(Optional.of(usuario));
         when(productoRepository.findById(1L)).thenReturn(Optional.of(producto));
 
-        
-        assertThrows(IllegalArgumentException.class, () -> pedidoService.crearPedido(pedidoCrearDTO));
-        verify(pedidoRepository, never()).save(any(Pedido.class));
-        verify(puntosService, never()).sumarPuntos(any()); 
+        assertThrows(IllegalArgumentException.class, () -> boletaService.crearBoletaInterna(boletaCrearDTO));
+        verify(boletaRepository, never()).save(any(Boleta.class));
+        verify(puntosService, never()).sumarPuntos(any());
     }
 }

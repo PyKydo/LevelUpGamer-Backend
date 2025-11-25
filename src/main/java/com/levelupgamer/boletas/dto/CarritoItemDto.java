@@ -1,4 +1,4 @@
-package com.levelupgamer.pedidos.dto;
+package com.levelupgamer.boletas.dto;
 
 public class CarritoItemDto {
     private Long productId;

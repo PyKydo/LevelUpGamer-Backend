@@ -1,4 +1,4 @@
-package com.levelupgamer.pedidos;
+package com.levelupgamer.boletas;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
@@ -23,7 +23,7 @@ import lombok.Builder;
 @Builder
 @Entity
 @EntityListeners(AuditingEntityListener.class)
-public class Pedido {
+public class Boleta {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -33,8 +33,8 @@ public class Pedido {
     @NotNull
     private Usuario usuario;
 
-    @OneToMany(mappedBy = "pedido", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<PedidoItem> items;
+    @OneToMany(mappedBy = "boleta", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<BoletaDetalle> detalles;
 
     @NotNull
     @DecimalMin("0.0")
@@ -56,7 +56,7 @@ public class Pedido {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 30)
-    private EstadoPedido estado;
+    private EstadoBoleta estado;
 
     
     @CreatedDate

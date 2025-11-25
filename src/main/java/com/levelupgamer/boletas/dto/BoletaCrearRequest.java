@@ -1,4 +1,4 @@
-package com.levelupgamer.pedidos.dto;
+package com.levelupgamer.boletas.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.Valid;

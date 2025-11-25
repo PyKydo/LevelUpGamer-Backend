@@ -1,4 +1,4 @@
-package com.levelupgamer.pedidos;
+package com.levelupgamer.boletas;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -32,6 +32,7 @@ import static org.hamcrest.Matchers.*;
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 @Transactional
+@SuppressWarnings("null")
 class CarritoE2ETest {
 
         private final MockMvc mockMvc;

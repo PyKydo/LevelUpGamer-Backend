@@ -1,4 +1,4 @@
-package com.levelupgamer.pedidos.dto;
+package com.levelupgamer.boletas.dto;
 
 import jakarta.validation.constraints.*;
 import java.util.List;
@@ -13,11 +13,11 @@ import lombok.Builder;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class PedidoCrearDTO {
+public class BoletaCrearDTO {
     @NotNull
     private Long usuarioId;
     @NotNull
-    private List<PedidoItemCrearDTO> items;
+    private List<BoletaDetalleCrearDTO> detalles;
     private Long cuponId;
     private String codigoCupon;
 }

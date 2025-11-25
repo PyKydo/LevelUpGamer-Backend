@@ -1,4 +1,4 @@
-package com.levelupgamer.pedidos;
+package com.levelupgamer.boletas;
 
 import com.levelupgamer.usuarios.Usuario;
 import jakarta.persistence.*;

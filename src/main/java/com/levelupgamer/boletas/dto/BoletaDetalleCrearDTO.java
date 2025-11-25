@@ -1,4 +1,4 @@
-package com.levelupgamer.pedidos.dto;
+package com.levelupgamer.boletas.dto;
 
 import jakarta.validation.constraints.*;
 import lombok.Getter;
@@ -12,7 +12,7 @@ import lombok.Builder;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class PedidoItemCrearDTO {
+public class BoletaDetalleCrearDTO {
     @NotNull
     private Long productoId;
     @NotNull

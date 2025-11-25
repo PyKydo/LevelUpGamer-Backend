@@ -1,4 +1,4 @@
-package com.levelupgamer.pedidos.dto;
+package com.levelupgamer.boletas.dto;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -13,10 +13,10 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class PedidoRespuestaDTO {
+public class BoletaRespuestaDTO {
     private Long id;
     private Long usuarioId;
-    private List<PedidoItemRespuestaDTO> items;
+    private List<BoletaDetalleRespuestaDTO> detalles;
     private BigDecimal total;
     private BigDecimal totalAntesDescuentos;
     private Integer descuentoCupon;
@@ -25,6 +25,4 @@ public class PedidoRespuestaDTO {
     private String cuponCodigo;
     private LocalDateTime fecha;
     private String estado;
-    
-    
 }

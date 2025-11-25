@@ -1,6 +1,6 @@
 package com.levelupgamer.productos;
 
-import com.levelupgamer.pedidos.PedidoRepository;
+import com.levelupgamer.boletas.BoletaRepository;
 import com.levelupgamer.usuarios.Usuario;
 import com.levelupgamer.usuarios.UsuarioRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,7 +21,7 @@ public class ResenaService {
     private UsuarioRepository usuarioRepository;
 
     @Autowired
-    private PedidoRepository pedidoRepository;
+    private BoletaRepository boletaRepository;
 
     @Transactional
     public Resena crearResena(Long productoId, Long usuarioId, Resena resena) {
@@ -31,7 +31,7 @@ public class ResenaService {
         Usuario usuario = usuarioRepository.findById(usuarioId)
                 .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado"));
 
-        boolean comproProducto = pedidoRepository.existsByUsuarioIdAndItemsProductoId(usuarioId, productoId);
+        boolean comproProducto = boletaRepository.existsByUsuarioIdAndDetallesProductoId(usuarioId, productoId);
         if (!comproProducto) {
             throw new IllegalStateException("Solo puedes reseñar productos que ya compraste");
         }

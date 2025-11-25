@@ -1,6 +1,6 @@
-package com.levelupgamer.pedidos;
+package com.levelupgamer.boletas;
 
-import com.levelupgamer.pedidos.dto.CarritoDto;
+import com.levelupgamer.boletas.dto.CarritoDto;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 

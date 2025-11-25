@@ -1,6 +1,6 @@
-package com.levelupgamer.pedidos;
+package com.levelupgamer.boletas;
 
-public enum EstadoPedido {
+public enum EstadoBoleta {
     PENDIENTE,
     PAGADO,
     ENVIADO,

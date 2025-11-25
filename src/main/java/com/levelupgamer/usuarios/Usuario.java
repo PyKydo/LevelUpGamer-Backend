@@ -8,7 +8,7 @@ import java.util.Set;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
-import com.levelupgamer.pedidos.Pedido;
+import com.levelupgamer.boletas.Boleta;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.NoArgsConstructor;
@@ -82,7 +82,7 @@ public class Usuario {
     private Boolean isDuocUser = false;
 
     @OneToMany(mappedBy = "usuario")
-    private Set<Pedido> pedidos;
+    private Set<Boleta> boletas;
 
     
     @Builder.Default

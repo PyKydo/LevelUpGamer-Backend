@@ -1,10 +1,10 @@
-package com.levelupgamer.pedidos;
+package com.levelupgamer.boletas;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.levelupgamer.autenticacion.LoginRequest;
-import com.levelupgamer.pedidos.dto.BoletaCrearRequest;
-import com.levelupgamer.pedidos.dto.BoletaDetalleRequest;
+import com.levelupgamer.boletas.dto.BoletaCrearRequest;
+import com.levelupgamer.boletas.dto.BoletaDetalleRequest;
 import com.levelupgamer.productos.CategoriaProducto;
 import com.levelupgamer.productos.Producto;
 import com.levelupgamer.productos.ProductoRepository;
@@ -38,7 +38,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 @Transactional
 @ActiveProfiles("test")
-class PedidoE2ETest {
+@SuppressWarnings("null")
+class BoletaE2ETest {
 
         @Autowired
         private MockMvc mockMvc;
@@ -92,8 +93,8 @@ class PedidoE2ETest {
 
                 
                 producto = Producto.builder()
-                                .codigo("E2E-PEDIDO-001")
-                                .nombre("Producto para Pedido")
+                                .codigo("E2E-BOLETA-001")
+                                .nombre("Producto para Boleta")
                                 .precio(new BigDecimal("100.00"))
                                 .stock(20)
                                 .categoria(CategoriaProducto.CONSOLAS)
@@ -103,7 +104,7 @@ class PedidoE2ETest {
         }
 
         @Test
-        void deberiaCrearUnPedidoYReducirElStockDelProducto() throws Exception {
+        void deberiaCrearUnaBoletaYReducirElStockDelProducto() throws Exception {
                 
                 BoletaDetalleRequest detalle = BoletaDetalleRequest.builder()
                                 .productoId(producto.getId())

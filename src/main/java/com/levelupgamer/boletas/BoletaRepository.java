@@ -1,11 +1,11 @@
-package com.levelupgamer.pedidos;
+package com.levelupgamer.boletas;
 
 import java.util.List;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
-public interface PedidoRepository extends JpaRepository<Pedido, Long> {
-    List<Pedido> findByUsuarioId(Long usuarioId);
+public interface BoletaRepository extends JpaRepository<Boleta, Long> {
+    List<Boleta> findByUsuarioId(Long usuarioId);
 
-    boolean existsByUsuarioIdAndItemsProductoId(Long usuarioId, Long productoId);
+    boolean existsByUsuarioIdAndDetallesProductoId(Long usuarioId, Long productoId);
 }

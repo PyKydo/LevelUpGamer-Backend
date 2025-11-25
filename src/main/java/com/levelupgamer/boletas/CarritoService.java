@@ -1,6 +1,6 @@
-package com.levelupgamer.pedidos;
+package com.levelupgamer.boletas;
 
-import com.levelupgamer.pedidos.dto.CarritoDto;
+import com.levelupgamer.boletas.dto.CarritoDto;
 import com.levelupgamer.productos.Producto;
 import com.levelupgamer.productos.ProductoRepository;
 import com.levelupgamer.usuarios.Usuario;

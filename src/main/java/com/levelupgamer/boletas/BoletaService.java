@@ -1,23 +1,17 @@
-package com.levelupgamer.pedidos;
+package com.levelupgamer.boletas;
 
+import com.levelupgamer.boletas.dto.BoletaCrearDTO;
+import com.levelupgamer.boletas.dto.BoletaCrearRequest;
+import com.levelupgamer.boletas.dto.BoletaDetalleCrearDTO;
+import com.levelupgamer.boletas.dto.BoletaRespuestaDTO;
 import com.levelupgamer.gamificacion.PuntosService;
 import com.levelupgamer.gamificacion.cupones.Cupon;
 import com.levelupgamer.gamificacion.cupones.CuponService;
 import com.levelupgamer.gamificacion.dto.PuntosDTO;
-import com.levelupgamer.pedidos.dto.BoletaCrearRequest;
-import com.levelupgamer.pedidos.dto.PedidoCrearDTO;
-import com.levelupgamer.pedidos.dto.PedidoItemCrearDTO;
-import com.levelupgamer.pedidos.dto.PedidoRespuestaDTO;
 import com.levelupgamer.productos.Producto;
 import com.levelupgamer.productos.ProductoRepository;
 import com.levelupgamer.usuarios.Usuario;
 import com.levelupgamer.usuarios.UsuarioRepository;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import lombok.RequiredArgsConstructor;
-
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
@@ -26,14 +20,19 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
-public class PedidoService {
-    private static final Logger logger = LoggerFactory.getLogger(PedidoService.class);
+public class BoletaService {
+    private static final Logger logger = LoggerFactory.getLogger(BoletaService.class);
     private static final String DUOC_DOMAIN = "duoc.cl";
     private static final String PROFESOR_DUOC_DOMAIN = "profesor.duoc.cl";
-    private final PedidoRepository pedidoRepository;
+    private final BoletaRepository boletaRepository;
     private final UsuarioRepository usuarioRepository;
     private final ProductoRepository productoRepository;
     private final PuntosService puntosService;
@@ -46,95 +45,95 @@ public class PedidoService {
          * @return Boleta creada como DTO.
          */
         @Transactional
-        public PedidoRespuestaDTO crearBoleta(BoletaCrearRequest request) {
+        public BoletaRespuestaDTO crearBoleta(BoletaCrearRequest request) {
         Objects.requireNonNull(request, "La boleta no puede ser nula");
 
-        PedidoCrearDTO pedidoDTO = PedidoCrearDTO.builder()
+        BoletaCrearDTO boletaDTO = BoletaCrearDTO.builder()
             .usuarioId(request.getClienteId())
-            .items(Optional.ofNullable(request.getDetalles())
+            .detalles(Optional.ofNullable(request.getDetalles())
                 .orElseThrow(() -> new IllegalArgumentException("La boleta debe incluir al menos un detalle"))
                 .stream()
-                .map(detalle -> PedidoItemCrearDTO.builder()
+                .map(detalle -> BoletaDetalleCrearDTO.builder()
                     .productoId(detalle.getProductoId())
                     .cantidad(detalle.getCantidad())
                     .build())
                 .collect(Collectors.toList()))
             .build();
 
-        PedidoRespuestaDTO respuesta = crearPedido(pedidoDTO);
+        BoletaRespuestaDTO respuesta = crearBoletaInterna(boletaDTO);
         validarTotalDeclarado(request.getTotal(), respuesta.getTotal());
         return respuesta;
         }
 
     /**
-     * Crea un nuevo pedido para un usuario.
+     * Crea una boleta a partir de un DTO interno.
      *
-     * @param dto DTO con los datos del pedido.
-     * @return DTO con la respuesta del pedido creado.
+     * @param dto DTO con los datos de la boleta.
+     * @return DTO con la respuesta de la boleta creada.
      */
     @Transactional
-    public PedidoRespuestaDTO crearPedido(PedidoCrearDTO dto) {
-        Objects.requireNonNull(dto, "El pedido no puede ser nulo");
+    public BoletaRespuestaDTO crearBoletaInterna(BoletaCrearDTO dto) {
+        Objects.requireNonNull(dto, "La boleta no puede ser nula");
         Usuario usuario = obtenerUsuario(dto.getUsuarioId());
-        List<PedidoItemCrearDTO> itemsSolicitados = Optional.ofNullable(dto.getItems())
+        List<BoletaDetalleCrearDTO> detallesSolicitados = Optional.ofNullable(dto.getDetalles())
             .filter(l -> !l.isEmpty())
-            .orElseThrow(() -> new IllegalArgumentException("El pedido debe incluir al menos un producto"));
-        List<PedidoItem> items = new ArrayList<>();
+            .orElseThrow(() -> new IllegalArgumentException("La boleta debe incluir al menos un producto"));
+        List<BoletaDetalle> detalles = new ArrayList<>();
         BigDecimal total = BigDecimal.ZERO;
         int puntosGanados = 0;
 
-        for (PedidoItemCrearDTO itemDTO : itemsSolicitados) {
-            Producto producto = obtenerProducto(itemDTO.getProductoId());
-            validarStock(producto, itemDTO.getCantidad());
+        for (BoletaDetalleCrearDTO detalleDTO : detallesSolicitados) {
+            Producto producto = obtenerProducto(detalleDTO.getProductoId());
+            validarStock(producto, detalleDTO.getCantidad());
 
             BigDecimal precioUnitario = calcularPrecioUnitario(producto, usuario);
-            BigDecimal subtotal = precioUnitario.multiply(BigDecimal.valueOf(itemDTO.getCantidad()));
+            BigDecimal subtotal = precioUnitario.multiply(BigDecimal.valueOf(detalleDTO.getCantidad()));
 
-            PedidoItem item = crearItemPedido(producto, itemDTO, precioUnitario, subtotal);
-            items.add(item);
+            BoletaDetalle detalle = crearDetalleBoleta(producto, detalleDTO, precioUnitario, subtotal);
+            detalles.add(detalle);
             total = total.add(subtotal);
             int puntosProducto = producto.getPuntosLevelUp() != null ? producto.getPuntosLevelUp() : 0;
-            puntosGanados += puntosProducto * itemDTO.getCantidad();
+            puntosGanados += puntosProducto * detalleDTO.getCantidad();
 
-            actualizarStock(producto, itemDTO.getCantidad());
+            actualizarStock(producto, detalleDTO.getCantidad());
         }
 
         Cupon cuponAplicado = procesarCupon(dto, usuario);
         DescuentoContexto descuentos = calcularDescuentos(total, usuario, cuponAplicado);
 
-        Pedido pedido = guardarPedido(usuario, items, descuentos, cuponAplicado);
+        Boleta boleta = guardarBoleta(usuario, detalles, descuentos, cuponAplicado);
         procesarPuntos(usuario, puntosGanados);
         if (cuponAplicado != null) {
             cuponService.marcarComoUsado(cuponAplicado);
         }
 
-        return PedidoMapper.toDTO(pedido);
+        return BoletaMapper.toDTO(boleta);
     }
 
     /**
-     * Lista los pedidos de un usuario específico.
+     * Lista las boletas de un usuario específico.
      *
      * @param usuarioId ID del usuario.
-     * @return Lista de pedidos del usuario.
+     * @return Lista de boletas del usuario.
      */
     @Transactional(readOnly = true)
-    public List<PedidoRespuestaDTO> listarPedidosPorUsuario(Long usuarioId) {
+    public List<BoletaRespuestaDTO> listarBoletasPorUsuario(Long usuarioId) {
         Objects.requireNonNull(usuarioId, "El id de usuario no puede ser nulo");
-        return pedidoRepository.findByUsuarioId(usuarioId).stream()
-                .map(PedidoMapper::toDTO)
+        return boletaRepository.findByUsuarioId(usuarioId).stream()
+                .map(BoletaMapper::toDTO)
                 .collect(Collectors.toList());
     }
 
     /**
-     * Busca un pedido por su ID.
+     * Busca una boleta por su ID.
      *
-     * @param id ID del pedido.
-     * @return Optional con el pedido si existe.
+     * @param id ID de la boleta.
+     * @return Optional con la boleta si existe.
      */
     @Transactional(readOnly = true)
-    public Optional<Pedido> buscarPorId(Long id) {
-        Objects.requireNonNull(id, "El id de pedido no puede ser nulo");
-        return pedidoRepository.findById(id);
+    public Optional<Boleta> buscarPorId(Long id) {
+        Objects.requireNonNull(id, "El id de la boleta no puede ser nulo");
+        return boletaRepository.findById(id);
     }
 
     
@@ -161,14 +160,14 @@ public class PedidoService {
         return producto.getPrecio();
     }
 
-    private PedidoItem crearItemPedido(Producto producto, PedidoItemCrearDTO itemDTO, BigDecimal precioUnitario,
+    private BoletaDetalle crearDetalleBoleta(Producto producto, BoletaDetalleCrearDTO detalleDTO, BigDecimal precioUnitario,
             BigDecimal subtotal) {
-        PedidoItem item = new PedidoItem();
-        item.setProducto(producto);
-        item.setCantidad(itemDTO.getCantidad());
-        item.setPrecioUnitario(precioUnitario);
-        item.setSubtotal(subtotal);
-        return item;
+        BoletaDetalle detalle = new BoletaDetalle();
+        detalle.setProducto(producto);
+        detalle.setCantidad(detalleDTO.getCantidad());
+        detalle.setPrecioUnitario(precioUnitario);
+        detalle.setSubtotal(subtotal);
+        return detalle;
     }
 
     private void actualizarStock(Producto producto, int cantidad) {
@@ -181,19 +180,19 @@ public class PedidoService {
         }
     }
 
-    private Pedido guardarPedido(Usuario usuario, List<PedidoItem> items, DescuentoContexto descuentos, Cupon cupon) {
-        Pedido pedido = new Pedido();
-        pedido.setUsuario(usuario);
-        pedido.setItems(items);
-        pedido.setTotalAntesDescuentos(descuentos.totalOriginal());
-        pedido.setTotal(descuentos.totalFinal());
-        pedido.setCupon(cupon);
-        pedido.setDescuentoCuponAplicado(descuentos.descuentoCupon());
-        pedido.setDescuentoDuocAplicado(descuentos.descuentoDuoc());
-        pedido.setFecha(LocalDateTime.now());
-        pedido.setEstado(EstadoPedido.PENDIENTE);
-        items.forEach(item -> item.setPedido(pedido));
-        return pedidoRepository.save(pedido);
+    private Boleta guardarBoleta(Usuario usuario, List<BoletaDetalle> detalles, DescuentoContexto descuentos, Cupon cupon) {
+        Boleta boleta = new Boleta();
+        boleta.setUsuario(usuario);
+        boleta.setDetalles(detalles);
+        boleta.setTotalAntesDescuentos(descuentos.totalOriginal());
+        boleta.setTotal(descuentos.totalFinal());
+        boleta.setCupon(cupon);
+        boleta.setDescuentoCuponAplicado(descuentos.descuentoCupon());
+        boleta.setDescuentoDuocAplicado(descuentos.descuentoDuoc());
+        boleta.setFecha(LocalDateTime.now());
+        boleta.setEstado(EstadoBoleta.PENDIENTE);
+        detalles.forEach(detalle -> detalle.setBoleta(boleta));
+        return boletaRepository.save(boleta);
     }
 
     private void procesarPuntos(Usuario usuario, int puntosGanados) {
@@ -202,7 +201,7 @@ public class PedidoService {
         }
     }
 
-    private Cupon procesarCupon(PedidoCrearDTO dto, Usuario usuario) {
+    private Cupon procesarCupon(BoletaCrearDTO dto, Usuario usuario) {
         if (dto.getCuponId() == null && dto.getCodigoCupon() == null) {
             return null;
         }

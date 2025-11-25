@@ -1,36 +1,39 @@
-package com.levelupgamer.pedidos;
+package com.levelupgamer.boletas;
 
-import com.levelupgamer.pedidos.dto.*;
+import com.levelupgamer.boletas.dto.BoletaDetalleRespuestaDTO;
+import com.levelupgamer.boletas.dto.BoletaRespuestaDTO;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class PedidoMapper {
-    public static PedidoRespuestaDTO toDTO(Pedido pedido) {
-        PedidoRespuestaDTO dto = new PedidoRespuestaDTO();
-        dto.setId(pedido.getId());
-        dto.setUsuarioId(pedido.getUsuario() != null ? pedido.getUsuario().getId() : null);
-        dto.setItems(toItemDTOList(pedido.getItems()));
-        dto.setTotal(pedido.getTotal());
-        dto.setTotalAntesDescuentos(pedido.getTotalAntesDescuentos());
-        dto.setDescuentoCupon(pedido.getDescuentoCuponAplicado());
-        dto.setDescuentoDuoc(pedido.getDescuentoDuocAplicado());
-        dto.setCuponCodigo(pedido.getCupon() != null ? pedido.getCupon().getCodigo() : null);
-        dto.setCuponId(pedido.getCupon() != null ? pedido.getCupon().getId() : null);
-        dto.setFecha(pedido.getFecha());
-        dto.setEstado(pedido.getEstado() != null ? pedido.getEstado().name() : null);
+public class BoletaMapper {
+    public static BoletaRespuestaDTO toDTO(Boleta boleta) {
+        BoletaRespuestaDTO dto = new BoletaRespuestaDTO();
+        dto.setId(boleta.getId());
+        dto.setUsuarioId(boleta.getUsuario() != null ? boleta.getUsuario().getId() : null);
+        dto.setDetalles(toDetalleDTOList(boleta.getDetalles()));
+        dto.setTotal(boleta.getTotal());
+        dto.setTotalAntesDescuentos(boleta.getTotalAntesDescuentos());
+        dto.setDescuentoCupon(boleta.getDescuentoCuponAplicado());
+        dto.setDescuentoDuoc(boleta.getDescuentoDuocAplicado());
+        dto.setCuponCodigo(boleta.getCupon() != null ? boleta.getCupon().getCodigo() : null);
+        dto.setCuponId(boleta.getCupon() != null ? boleta.getCupon().getId() : null);
+        dto.setFecha(boleta.getFecha());
+        dto.setEstado(boleta.getEstado() != null ? boleta.getEstado().name() : null);
         return dto;
     }
-    public static List<PedidoItemRespuestaDTO> toItemDTOList(List<PedidoItem> items) {
-        if (items == null) return null;
-        return items.stream().map(PedidoMapper::toItemDTO).collect(Collectors.toList());
+
+    public static List<BoletaDetalleRespuestaDTO> toDetalleDTOList(List<BoletaDetalle> detalles) {
+        if (detalles == null) return null;
+        return detalles.stream().map(BoletaMapper::toDetalleDTO).collect(Collectors.toList());
     }
-    public static PedidoItemRespuestaDTO toItemDTO(PedidoItem item) {
-        PedidoItemRespuestaDTO dto = new PedidoItemRespuestaDTO();
-        dto.setProductoId(item.getProducto() != null ? item.getProducto().getId() : null);
-        dto.setNombreProducto(item.getProducto() != null ? item.getProducto().getNombre() : null);
-        dto.setCantidad(item.getCantidad());
-        dto.setPrecioUnitario(item.getPrecioUnitario());
-        dto.setSubtotal(item.getSubtotal());
+
+    public static BoletaDetalleRespuestaDTO toDetalleDTO(BoletaDetalle detalle) {
+        BoletaDetalleRespuestaDTO dto = new BoletaDetalleRespuestaDTO();
+        dto.setProductoId(detalle.getProducto() != null ? detalle.getProducto().getId() : null);
+        dto.setNombreProducto(detalle.getProducto() != null ? detalle.getProducto().getNombre() : null);
+        dto.setCantidad(detalle.getCantidad());
+        dto.setPrecioUnitario(detalle.getPrecioUnitario());
+        dto.setSubtotal(detalle.getSubtotal());
         return dto;
     }
 }

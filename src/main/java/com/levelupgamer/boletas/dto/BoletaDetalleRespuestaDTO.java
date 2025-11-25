@@ -1,4 +1,4 @@
-package com.levelupgamer.pedidos.dto;
+package com.levelupgamer.boletas.dto;
 
 import java.math.BigDecimal;
 
@@ -15,12 +15,10 @@ import lombok.Builder;
 @Getter
 @Setter
 @Builder
-public class PedidoItemRespuestaDTO {
+public class BoletaDetalleRespuestaDTO {
     private Long productoId;
     private String nombreProducto;
     private Integer cantidad;
     private BigDecimal precioUnitario;
     private BigDecimal subtotal;
-    
-    
 }
