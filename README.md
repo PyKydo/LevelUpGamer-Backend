@@ -80,7 +80,7 @@ Consulta `docs/personal/DEPLOYMENT.md` para el detalle de `EnvironmentFile` y el
 - Filtro `JwtAutenticacionFilter` agrega `SecurityContext` a partir del header `Authorization: Bearer <token>`.
 - `SecurityConfig` habilita CORS global (`*`) y define accesos:
   - Público: `/`, `/api/auth/login`, `/api/auth/refresh`, `/api/users/register`, `/api/blog-posts/**`, `/api/contact-messages`, `/swagger-ui/**`, `/v3/api-docs/**`.
-  - Requiere autenticación: `/api/users/{id}`, `/api/products/**`, `/api/orders/**`, `/api/points/**`, `/api/cart/**`, `/api/reviews/**`.
+  - Requiere autenticación: `/api/users/{id}`, `/api/products/**`, `/api/v1/boletas/**`, `/api/points/**`, `/api/cart/**`, `/api/reviews/**`.
   - Solo admins: `/api/users`, `/api/users/roles`, `/api/users/admin`, mutaciones de productos y blogs.
 - Errores se devuelven como `{ "error": "mensaje" }` o mapas campo -> error en validaciones.
 

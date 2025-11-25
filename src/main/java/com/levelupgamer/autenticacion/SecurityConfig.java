@@ -48,7 +48,7 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/api/users/{id}").authenticated()
                 .requestMatchers(HttpMethod.PUT, "/api/users/{id}").authenticated()
                 .requestMatchers("/api/products/**").hasAnyRole("ADMINISTRADOR", "CLIENTE")
-                .requestMatchers("/api/orders/**").hasAnyRole("ADMINISTRADOR", "CLIENTE")
+                .requestMatchers("/api/v1/boletas/**").hasAnyRole("ADMINISTRADOR", "CLIENTE")
                 .requestMatchers("/api/points/**").authenticated()
 
                 

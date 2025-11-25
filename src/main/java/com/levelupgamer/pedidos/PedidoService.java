@@ -4,6 +4,7 @@ import com.levelupgamer.gamificacion.PuntosService;
 import com.levelupgamer.gamificacion.cupones.Cupon;
 import com.levelupgamer.gamificacion.cupones.CuponService;
 import com.levelupgamer.gamificacion.dto.PuntosDTO;
+import com.levelupgamer.pedidos.dto.BoletaCrearRequest;
 import com.levelupgamer.pedidos.dto.PedidoCrearDTO;
 import com.levelupgamer.pedidos.dto.PedidoItemCrearDTO;
 import com.levelupgamer.pedidos.dto.PedidoRespuestaDTO;
@@ -37,6 +38,33 @@ public class PedidoService {
     private final ProductoRepository productoRepository;
     private final PuntosService puntosService;
     private final CuponService cuponService;
+
+        /**
+         * Crea una boleta completa (cabecera + detalles) en una sola transacción.
+         *
+         * @param request payload recibido desde el frontend.
+         * @return Boleta creada como DTO.
+         */
+        @Transactional
+        public PedidoRespuestaDTO crearBoleta(BoletaCrearRequest request) {
+        Objects.requireNonNull(request, "La boleta no puede ser nula");
+
+        PedidoCrearDTO pedidoDTO = PedidoCrearDTO.builder()
+            .usuarioId(request.getClienteId())
+            .items(Optional.ofNullable(request.getDetalles())
+                .orElseThrow(() -> new IllegalArgumentException("La boleta debe incluir al menos un detalle"))
+                .stream()
+                .map(detalle -> PedidoItemCrearDTO.builder()
+                    .productoId(detalle.getProductoId())
+                    .cantidad(detalle.getCantidad())
+                    .build())
+                .collect(Collectors.toList()))
+            .build();
+
+        PedidoRespuestaDTO respuesta = crearPedido(pedidoDTO);
+        validarTotalDeclarado(request.getTotal(), respuesta.getTotal());
+        return respuesta;
+        }
 
     /**
      * Crea un nuevo pedido para un usuario.
@@ -197,4 +225,14 @@ public class PedidoService {
     }
 
     private record DescuentoContexto(BigDecimal totalOriginal, BigDecimal totalFinal, Integer descuentoDuoc, Integer descuentoCupon) {}
+
+    private void validarTotalDeclarado(BigDecimal totalDeclarado, BigDecimal totalCalculado) {
+        if (totalDeclarado == null || totalCalculado == null) {
+            return;
+        }
+        BigDecimal diferencia = totalDeclarado.subtract(totalCalculado).abs();
+        if (diferencia.compareTo(new BigDecimal("0.01")) > 0) {
+            throw new IllegalArgumentException("El total enviado no coincide con el calculado por el sistema");
+        }
+    }
 }

@@ -3,8 +3,8 @@ package com.levelupgamer.pedidos;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.levelupgamer.autenticacion.LoginRequest;
-import com.levelupgamer.pedidos.dto.PedidoCrearDTO;
-import com.levelupgamer.pedidos.dto.PedidoItemCrearDTO;
+import com.levelupgamer.pedidos.dto.BoletaCrearRequest;
+import com.levelupgamer.pedidos.dto.BoletaDetalleRequest;
 import com.levelupgamer.productos.CategoriaProducto;
 import com.levelupgamer.productos.Producto;
 import com.levelupgamer.productos.ProductoRepository;
@@ -105,19 +105,22 @@ class PedidoE2ETest {
         @Test
         void deberiaCrearUnPedidoYReducirElStockDelProducto() throws Exception {
                 
-                PedidoItemCrearDTO itemDTO = new PedidoItemCrearDTO();
-                itemDTO.setProductoId(producto.getId());
-                itemDTO.setCantidad(2);
+                BoletaDetalleRequest detalle = BoletaDetalleRequest.builder()
+                                .productoId(producto.getId())
+                                .cantidad(2)
+                                .build();
 
-                PedidoCrearDTO pedidoDTO = new PedidoCrearDTO();
-                pedidoDTO.setUsuarioId(clienteId);
-                pedidoDTO.setItems(Collections.singletonList(itemDTO));
+                BoletaCrearRequest boletaRequest = BoletaCrearRequest.builder()
+                                .clienteId(clienteId)
+                                .total(new BigDecimal("200.00"))
+                                .detalles(Collections.singletonList(detalle))
+                                .build();
 
-                mockMvc.perform(post("/api/orders")
+                mockMvc.perform(post("/api/v1/boletas")
                                 .header("Authorization", "Bearer " + clienteToken)
                                 .contentType(MediaType.APPLICATION_JSON)
-                                .content(objectMapper.writeValueAsString(pedidoDTO)))
-                                .andExpect(status().isOk())
+                                .content(objectMapper.writeValueAsString(boletaRequest)))
+                                .andExpect(status().isCreated())
                                 .andExpect(jsonPath("$.total").value(200.00));
 
                 
