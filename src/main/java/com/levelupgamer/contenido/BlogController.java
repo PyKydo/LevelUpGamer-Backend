@@ -2,12 +2,13 @@ package com.levelupgamer.contenido;
 
 import com.levelupgamer.contenido.dto.BlogDTO;
 import com.levelupgamer.common.storage.FileStorageService;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.*;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/blog-posts")
@@ -59,14 +60,14 @@ public class BlogController {
 
         
         try {
-            ResponseEntity<String> resp = restTemplate.getForEntity(url, String.class);
-            if (resp.getStatusCode().is2xxSuccessful()) {
+            ResponseEntity<byte[]> resp = restTemplate.getForEntity(url, byte[].class);
+            if (resp.getStatusCode().is2xxSuccessful() && resp.getBody() != null) {
+                String markdown = new String(resp.getBody(), StandardCharsets.UTF_8);
                 HttpHeaders headers = new HttpHeaders();
                 headers.setContentType(MediaType.parseMediaType("text/markdown; charset=UTF-8"));
-                return new ResponseEntity<>(resp.getBody(), headers, HttpStatus.OK);
-            } else {
-                return ResponseEntity.status(resp.getStatusCode()).build();
+                return new ResponseEntity<>(markdown, headers, HttpStatus.OK);
             }
+            return ResponseEntity.status(resp.getStatusCode()).build();
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_GATEWAY).build();
         }
