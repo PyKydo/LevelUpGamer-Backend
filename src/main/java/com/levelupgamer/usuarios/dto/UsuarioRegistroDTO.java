@@ -37,7 +37,7 @@ public class UsuarioRegistroDTO {
     private String correo;
 
     @NotBlank(message = "La contraseña no puede estar vacía")
-    @Size(min = 4, max = 10, message = "La contraseña debe tener entre 4 y 10 caracteres")
+    @Size(min = 8, max = 32, message = "La contraseña debe tener entre 8 y 32 caracteres")
     private String contrasena;
 
     @Adult

@@ -54,7 +54,7 @@ class UsuarioServiceTest {
                 .nombre("Juan")
                 .apellidos("Perez")
                 .correo("juan@gmail.com")
-                .contrasena("abcd123")
+                .contrasena("abcd1234")
                 .fechaNacimiento(LocalDate.now().minusYears(25))
                 .build();
 

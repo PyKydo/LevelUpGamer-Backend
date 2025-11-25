@@ -6,9 +6,9 @@ Todos los endpoints REST están versionados bajo el prefijo `/api/v1/...` (ej. `
 
 ## Características Principales
 
-- **Usuarios y roles**: registro con validaciones de RUN y dominios permitidos, contraseñas hasheadas con BCrypt y roles `ADMINISTRADOR`, `VENDEDOR` (lectura de catálogo/boletas) y `CLIENTE`.
+- **Usuarios y roles**: registro con validaciones de RUN y dominios permitidos, contraseñas hasheadas con BCrypt y roles `ADMINISTRADOR`, `VENDEDOR` (puede crear/operar únicamente su inventario y ver sus propias boletas de seguimiento) y `CLIENTE`.
 - **Autenticación JWT**: login con selección explícita de rol cuando un usuario posee múltiples perfiles, emisión de tokens de acceso y refresh + endpoint de cambio de contraseña.
-- **Catálogo y stock**: CRUD de productos, carga de imágenes a S3, alertas de stock crítico en logs, campo `puntosLevelUp` (0-1000 en saltos de 100) para gamificación y endpoint de destacados (`GET /api/v1/products/featured`).
+- **Catálogo y stock**: CRUD de productos con ownership obligatorio (`Producto.vendedor`), carga de imágenes a S3, alertas de stock crítico en logs, campo `puntosLevelUp` (0-1000 en saltos de 100) para gamificación y endpoint de destacados (`GET /api/v1/products/featured`).
 - **Carrito persistente + Boletas**: carritos por usuario, generación de boletas (`POST /api/v1/boletas`) que descuentan stock, calculan subtotales y asignan puntos multiplicando `producto.puntosLevelUp * cantidad`; soporte para descuentos combinados (20% correos Duoc + cupones con tope 90%).
 - **Contenido**: blogs con cabeceras e imágenes almacenadas en S3 y recuperación del contenido en formato Markdown; formulario de contacto persistido en BD.
 - **Programa de puntos y referidos**: saldo de puntos en tabla dedicada (`Puntos`) con operaciones de earn/redeem, acumulación basada en atributos `puntosLevelUp`, conversión de puntos a cupones (%5-%30) y bonificación automática a referidos en el registro.
@@ -36,7 +36,7 @@ Cada dominio vive bajo `com.levelupgamer.{dominio}` y expone controladores REST 
 - `gamificacion`: entidad `Puntos`, repositorio y servicios de earn/redeem + módulo de cupones con conversión, listado y canje.
 - `contenido`: blogs (lectura desde S3), mensajes de contacto y seeds (`BlogDataInitializer`).
 - `common` y `config`: integraciones S3, validación, inicializadores y beans utilitarios.
-- `exception`: `GlobalExceptionHandler` con formato consistente de errores.
+- `exception`: `GlobalExceptionHandler` con formato consistente de errores, incluyendo respuestas `403` para `AccessDeniedException` cuando un vendedor intenta manipular productos ajenos o corporativos.
 
 ## Perfiles, Puertos y Configuración
 
@@ -71,7 +71,7 @@ Consulta `docs/personal/DEPLOYMENT.md` para el detalle de `EnvironmentFile` y el
 - RUN chileno sin puntos/guion (7-9 caracteres) y única columna `run`.
 - Dominios permitidos para correo: `gmail.com`, `hotmail.com`, `outlook.com`, `yahoo.com`, `duoc.cl`, `profesor.duoc.cl`.
 - Edad mínima 18 años (`@Adult`).
-- Contraseñas entre 4 y 10 caracteres (pendiente extensión configurable).
+- Contraseñas entre 8 y 32 caracteres (pendiente extensión configurable).
 - Descuento 20% para correos `duoc.cl` / `profesor.duoc.cl` al generar boletas.
 - Stock crítico: log `WARN` cuando `stock <= stockCritico`.
 - Puntos LevelUp: cada producto define `puntosLevelUp` (0-1000, múltiplos de 100) que se multiplican por la cantidad al cerrar la boleta y se acumulan en `Puntos`.
@@ -81,10 +81,10 @@ Consulta `docs/personal/DEPLOYMENT.md` para el detalle de `EnvironmentFile` y el
 
 - Filtro `JwtAutenticacionFilter` agrega `SecurityContext` a partir del header `Authorization: Bearer <token>`.
 - `SecurityConfig` habilita CORS global (`*`) y define accesos:
-  - Público: `/`, `/api/v1/auth/login`, `/api/v1/auth/refresh`, `/api/v1/users/register`, `/api/v1/blog-posts/**`, `/api/v1/contact-messages`, `/swagger-ui/**`, `/v3/api-docs/**`.
-  - Requiere autenticación: `/api/v1/users/{id}`, `/api/v1/products/**`, `/api/v1/categories/**`, `/api/v1/boletas/**`, `/api/v1/points/**`, `/api/v1/cart/**`, `/api/v1/reviews/**`.
-  - Rol vendedor: `VENDEDOR` puede leer (`GET`) `/api/v1/products/**`, `/api/v1/categories/**` y `/api/v1/boletas/**` para seguimiento comercial, pero no crear/editar recursos.
-  - Solo admins: `/api/v1/users`, `/api/v1/users/roles`, `/api/v1/users/admin`, mutaciones de productos, categorías y blogs.
+- Público: `/`, `/api/v1/auth/login`, `/api/v1/auth/refresh`, `/api/v1/users/register`, `/api/v1/blog-posts/**`, `/api/v1/contact-messages`, `/swagger-ui/**`, `/v3/api-docs/**`.
+- Requiere autenticación: `/api/v1/users/{id}`, `/api/v1/products/**`, `/api/v1/categories/**`, `/api/v1/boletas/**`, `/api/v1/points/**`, `/api/v1/cart/**`, `/api/v1/reviews/**`.
+- Rol vendedor: `VENDEDOR` puede listar solo sus productos, crear/actualizar/eliminar elementos de su inventario (no los corporativos) y consultar boletas para seguimiento comercial; cualquier intento fuera de esos límites responde `403`.
+- Solo admins: `/api/v1/users`, `/api/v1/users/roles`, `/api/v1/users/admin`, mutaciones de categorías y blogs, además de la gestión de productos corporativos “LevelUp”.
 - Errores se devuelven como `{ "error": "mensaje" }` o mapas campo -> error en validaciones.
 
 ## Pruebas

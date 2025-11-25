@@ -13,10 +13,10 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class ChangePasswordRequest {
     @NotBlank(message = "La contraseña actual es obligatoria")
-    @Size(min = 4, max = 10, message = "La contraseña actual debe tener entre 4 y 10 caracteres")
+    @Size(min = 8, max = 32, message = "La contraseña actual debe tener entre 8 y 32 caracteres")
     private String currentPassword;
 
     @NotBlank(message = "La nueva contraseña es obligatoria")
-    @Size(min = 4, max = 10, message = "La nueva contraseña debe tener entre 4 y 10 caracteres")
+    @Size(min = 8, max = 32, message = "La nueva contraseña debe tener entre 8 y 32 caracteres")
     private String newPassword;
 }

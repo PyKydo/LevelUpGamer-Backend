@@ -61,8 +61,8 @@ public class UsuarioService {
             throw new IllegalArgumentException("Contraseña es obligatoria");
         }
         String contrasena = dto.getContrasena().trim();
-        if (contrasena.length() < 4 || contrasena.length() > 10) {
-            throw new IllegalArgumentException("Contraseña inválida: debe tener entre 4 y 10 caracteres");
+        if (contrasena.length() < 8 || contrasena.length() > 32) {
+            throw new IllegalArgumentException("Contraseña inválida: debe tener entre 8 y 32 caracteres");
         }
 
         
