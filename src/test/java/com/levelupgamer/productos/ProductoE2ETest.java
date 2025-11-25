@@ -3,7 +3,7 @@ package com.levelupgamer.productos;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.levelupgamer.autenticacion.LoginRequest;
-import com.levelupgamer.common.S3Service;
+import com.levelupgamer.common.storage.FileStorageService;
 import com.levelupgamer.usuarios.RolUsuario;
 import com.levelupgamer.usuarios.Usuario;
 import com.levelupgamer.usuarios.UsuarioRepository;
@@ -27,9 +27,12 @@ import java.util.Collections;
 import java.util.Set;
 import java.util.UUID;
 
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.anyLong;
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @SpringBootTest
@@ -51,7 +54,7 @@ class ProductoE2ETest {
         private BCryptPasswordEncoder passwordEncoder;
 
         @MockBean
-        private S3Service s3Service;
+        private FileStorageService fileStorageService;
 
         private String adminToken;
 
@@ -114,6 +117,8 @@ class ProductoE2ETest {
                                 "imagen.jpg",
                                 MediaType.IMAGE_JPEG_VALUE,
                                 "fake-image-content".getBytes());
+
+                when(fileStorageService.uploadFile(any(), any(), anyLong())).thenReturn("/uploads/e2e.jpg");
 
                 mockMvc.perform(multipart("/api/products")
                                 .file(productoPart)

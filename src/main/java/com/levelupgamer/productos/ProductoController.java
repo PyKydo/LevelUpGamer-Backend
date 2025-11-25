@@ -40,7 +40,7 @@ public class ProductoController {
     @PostMapping(consumes = { MediaType.MULTIPART_FORM_DATA_VALUE })
     public ResponseEntity<ProductoDTO> crearProducto(
             @RequestPart("producto") @Valid Producto producto,
-            @RequestPart("imagen") MultipartFile imagen) throws IOException {
+            @RequestPart(value = "imagen", required = false) MultipartFile imagen) throws IOException {
         return ResponseEntity.ok(productoService.crearProducto(producto, imagen));
     }
 

@@ -1,6 +1,6 @@
 package com.levelupgamer.productos;
 
-import com.levelupgamer.common.S3Service;
+import com.levelupgamer.common.storage.FileStorageService;
 import com.levelupgamer.productos.dto.ProductoDTO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -19,7 +19,7 @@ public class ProductoService {
     private ProductoRepository productoRepository;
 
     @Autowired
-    private S3Service s3Service;
+    private FileStorageService fileStorageService;
 
     @Transactional(readOnly = true)
     public List<ProductoDTO> listarProductos() {
@@ -36,9 +36,15 @@ public class ProductoService {
 
         producto.setPuntosLevelUp(normalizarPuntos(producto.getPuntosLevelUp()));
 
-        // Subir la imagen a S3 y obtener la URL
-        String imageUrl = s3Service.uploadFile(imagen.getInputStream(), imagen.getOriginalFilename(), imagen.getSize());
-        producto.setImagenes(Collections.singletonList(imageUrl));
+        if (imagen != null && !imagen.isEmpty()) {
+            String imageUrl = fileStorageService.uploadFile(
+                    imagen.getInputStream(),
+                    imagen.getOriginalFilename(),
+                    imagen.getSize());
+            producto.setImagenes(Collections.singletonList(imageUrl));
+        } else if (producto.getImagenes() == null) {
+            producto.setImagenes(Collections.emptyList());
+        }
 
         producto.setActivo(true);
         Producto guardado = productoRepository.save(producto);

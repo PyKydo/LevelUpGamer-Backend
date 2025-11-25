@@ -1,13 +1,12 @@
 package com.levelupgamer.contenido;
 
 import com.levelupgamer.contenido.dto.BlogDTO;
-import com.levelupgamer.common.S3Service;
+import com.levelupgamer.common.storage.FileStorageService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.*;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
-import java.net.URI;
 import java.util.List;
 
 @RestController
@@ -20,7 +19,7 @@ public class BlogController {
     private RestTemplate restTemplate;
 
     @Autowired
-    private S3Service s3Service;
+    private FileStorageService fileStorageService;
 
     @GetMapping
     public ResponseEntity<List<BlogDTO>> listarBlogs() {
@@ -47,37 +46,12 @@ public class BlogController {
             return ResponseEntity.notFound().build();
         }
 
-        
         try {
-            String bucket = s3Service.getBucketName();
-            String key = null;
-            URI uri = URI.create(url);
-            String host = uri.getHost();
-            String path = uri.getPath();
-
-            if (host != null && host.contains(bucket)) {
-                
-                if (path != null && path.startsWith("/")) {
-                    key = path.substring(1);
-                } else {
-                    key = path;
-                }
-            } else if (host != null && host.contains("s3.amazonaws.com")) {
-                
-                
-                if (path != null && path.startsWith("/")) {
-                    String p = path.substring(1);
-                    if (p.startsWith(bucket + "/")) {
-                        key = p.substring(bucket.length() + 1);
-                    }
-                }
-            }
-
-            if (key != null) {
-                String content = s3Service.getFileContent(key);
+            var managedContent = fileStorageService.readContentIfManaged(url);
+            if (managedContent.isPresent()) {
                 HttpHeaders headers = new HttpHeaders();
                 headers.setContentType(MediaType.parseMediaType("text/markdown; charset=UTF-8"));
-                return new ResponseEntity<>(content, headers, HttpStatus.OK);
+                return new ResponseEntity<>(managedContent.get(), headers, HttpStatus.OK);
             }
         } catch (Exception ignored) {
             

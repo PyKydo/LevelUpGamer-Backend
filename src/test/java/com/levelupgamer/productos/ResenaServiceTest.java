@@ -1,0 +1,87 @@
+package com.levelupgamer.productos;
+
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import java.util.Optional;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+import com.levelupgamer.pedidos.PedidoRepository;
+import com.levelupgamer.usuarios.Usuario;
+import com.levelupgamer.usuarios.UsuarioRepository;
+
+@ExtendWith(MockitoExtension.class)
+class ResenaServiceTest {
+
+    @Mock
+    private ResenaRepository resenaRepository;
+
+    @Mock
+    private ProductoRepository productoRepository;
+
+    @Mock
+    private UsuarioRepository usuarioRepository;
+
+    @Mock
+    private PedidoRepository pedidoRepository;
+
+    @InjectMocks
+    private ResenaService resenaService;
+
+    private Producto producto;
+    private Usuario usuario;
+
+    @BeforeEach
+    void init() {
+        producto = new Producto();
+        producto.setId(10L);
+
+        usuario = Usuario.builder()
+                .id(5L)
+                .nombre("Test")
+                .apellidos("User")
+                .build();
+    }
+
+    @Test
+    void crearResena_conCompra_prevalida() {
+        Resena resena = new Resena();
+        resena.setTexto("Excelente");
+        resena.setCalificacion(5);
+
+        when(productoRepository.findById(10L)).thenReturn(Optional.of(producto));
+        when(usuarioRepository.findById(5L)).thenReturn(Optional.of(usuario));
+        when(pedidoRepository.existsByUsuarioIdAndItemsProductoId(5L, 10L)).thenReturn(true);
+        when(resenaRepository.save(any(Resena.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        Resena guardada = resenaService.crearResena(10L, 5L, resena);
+
+        assertTrue(guardada.getProducto() != null);
+        verify(resenaRepository, times(1)).save(resena);
+    }
+
+    @Test
+    void crearResena_sinCompra_rechaza() {
+        Resena resena = new Resena();
+        resena.setTexto("No compré");
+        resena.setCalificacion(3);
+
+        when(productoRepository.findById(10L)).thenReturn(Optional.of(producto));
+        when(usuarioRepository.findById(5L)).thenReturn(Optional.of(usuario));
+        when(pedidoRepository.existsByUsuarioIdAndItemsProductoId(5L, 10L)).thenReturn(false);
+
+        assertThrows(IllegalStateException.class, () -> resenaService.crearResena(10L, 5L, resena));
+        verify(resenaRepository, never()).save(any(Resena.class));
+    }
+}

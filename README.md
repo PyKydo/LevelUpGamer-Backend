@@ -19,7 +19,7 @@ Backend monolito modular para la tienda LevelUpGamer, construido con Java 21 y S
 - **Persistencia**: H2 en `dev`/`test`, PostgreSQL en `prod`, Flyway listo para migraciones (deshabilitado en prod hasta definir scripts).
 - **Seguridad**: Spring Security + filtros JWT personalizados (`JwtAutenticacionFilter`, `JwtProvider`).
 - **Validaciones personalizadas**: anotaciones `@Rut`, `@Adult` y `@AllowedEmailDomain` con factoría de validadores registrada en `ValidationConfig`.
-- **Integraciones AWS**: SDK v2 para S3 y SES (pendiente de uso), `S3Service` para subir/leer imágenes y markdown desde buckets públicos.
+- **Integraciones AWS**: SDK v2 para S3 y SES (pendiente de uso), `FileStorageService` con implementación S3 para prod y stub local en dev/test.
 - **Herramientas**: Lombok, SpringDoc OpenAPI (`springdoc-openapi-starter-webmvc-ui`), Maven Wrapper.
 
 ## Arquitectura por Dominios

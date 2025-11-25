@@ -3,14 +3,14 @@ package com.levelupgamer.config;
 import com.levelupgamer.productos.CategoriaProducto;
 import com.levelupgamer.productos.Producto;
 import com.levelupgamer.productos.ProductoRepository;
+import java.math.BigDecimal;
+import java.util.Collections;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.math.BigDecimal;
-import java.util.Collections;
+import org.springframework.util.StringUtils;
 
 @Component
 @Profile("!test")
@@ -18,7 +18,7 @@ public class ProductDataInitializer implements CommandLineRunner {
 
     private final ProductoRepository productoRepository;
 
-    @Value("${aws.s3.bucket.url}")
+        @Value("${aws.s3.bucket.url:}")
     private String s3BucketUrl;
 
     public ProductDataInitializer(ProductoRepository productoRepository) {
@@ -48,7 +48,7 @@ public class ProductDataInitializer implements CommandLineRunner {
                 .stockCritico(5)
                 .categoria(CategoriaProducto.JUEGOS_DE_MESA)
                 .puntosLevelUp(200)
-                .imagenes(Collections.singletonList(s3BucketUrl + "/products/JM001-catan.webp"))
+                .imagenes(Collections.singletonList(buildProductImage("JM001-catan.webp")))
                 .activo(true)
                 .build();
         productoRepository.save(jm001);
@@ -63,7 +63,7 @@ public class ProductDataInitializer implements CommandLineRunner {
                 .stockCritico(4)
                 .categoria(CategoriaProducto.JUEGOS_DE_MESA)
                 .puntosLevelUp(200)
-                .imagenes(Collections.singletonList(s3BucketUrl + "/products/JM002-carcassonne.webp"))
+                .imagenes(Collections.singletonList(buildProductImage("JM002-carcassonne.webp")))
                 .activo(true)
                 .build();
         productoRepository.save(jm002);
@@ -78,7 +78,7 @@ public class ProductDataInitializer implements CommandLineRunner {
                 .stockCritico(3)
                 .categoria(CategoriaProducto.ACCESORIOS)
                 .puntosLevelUp(300)
-                .imagenes(Collections.singletonList(s3BucketUrl + "/products/AC001-xbox-controller.webp"))
+                .imagenes(Collections.singletonList(buildProductImage("AC001-xbox-controller.webp")))
                 .activo(true)
                 .build();
         productoRepository.save(ac001);
@@ -93,7 +93,7 @@ public class ProductDataInitializer implements CommandLineRunner {
             .stockCritico(2)
             .categoria(CategoriaProducto.ACCESORIOS)
             .puntosLevelUp(400)
-            .imagenes(Collections.singletonList(s3BucketUrl + "/products/AC002-hyperx-cloud.webp"))
+            .imagenes(Collections.singletonList(buildProductImage("AC002-hyperx-cloud.webp")))
             .activo(true)
             .build();
         productoRepository.save(ac002);
@@ -108,7 +108,7 @@ public class ProductDataInitializer implements CommandLineRunner {
                 .stockCritico(1)
                 .categoria(CategoriaProducto.CONSOLAS)
                 .puntosLevelUp(800)
-                .imagenes(Collections.singletonList(s3BucketUrl + "/products/CQ001-ps5.webp"))
+                .imagenes(Collections.singletonList(buildProductImage("CQ001-ps5.webp")))
                 .activo(true)
                 .build();
         productoRepository.save(cq001);
@@ -123,7 +123,7 @@ public class ProductDataInitializer implements CommandLineRunner {
                 .stockCritico(1)
                 .categoria(CategoriaProducto.COMPUTADORES_GAMERS)
                 .puntosLevelUp(1000)
-                .imagenes(Collections.singletonList(s3BucketUrl + "/products/CG001-asus-rog.webp"))
+                .imagenes(Collections.singletonList(buildProductImage("CG001-asus-rog.webp")))
                 .activo(true)
                 .build();
         productoRepository.save(cg001);
@@ -138,7 +138,7 @@ public class ProductDataInitializer implements CommandLineRunner {
                 .stockCritico(1)
                 .categoria(CategoriaProducto.SILLAS_GAMERS)
                 .puntosLevelUp(300)
-                .imagenes(Collections.singletonList(s3BucketUrl + "/products/SG001-secretlab-titan.webp"))
+                .imagenes(Collections.singletonList(buildProductImage("SG001-secretlab-titan.webp")))
                 .activo(true)
                 .build();
         productoRepository.save(sg001);
@@ -153,7 +153,7 @@ public class ProductDataInitializer implements CommandLineRunner {
                 .stockCritico(3)
                 .categoria(CategoriaProducto.MOUSE)
                 .puntosLevelUp(200)
-                .imagenes(Collections.singletonList(s3BucketUrl + "/products/MS001-logitech-g502.webp"))
+                .imagenes(Collections.singletonList(buildProductImage("MS001-logitech-g502.webp")))
                 .activo(true)
                 .build();
         productoRepository.save(ms001);
@@ -168,7 +168,7 @@ public class ProductDataInitializer implements CommandLineRunner {
                 .stockCritico(5)
                 .categoria(CategoriaProducto.MOUSEPAD)
                 .puntosLevelUp(100)
-                .imagenes(Collections.singletonList(s3BucketUrl + "/products/MP001-razer-goliathus.webp"))
+                .imagenes(Collections.singletonList(buildProductImage("MP001-razer-goliathus.webp")))
                 .activo(true)
                 .build();
         productoRepository.save(mp001);
@@ -183,9 +183,18 @@ public class ProductDataInitializer implements CommandLineRunner {
                 .stockCritico(8)
                 .categoria(CategoriaProducto.POLERAS_PERSONALIZADAS)
                 .puntosLevelUp(100)
-                .imagenes(Collections.singletonList(s3BucketUrl + "/products/PP001-levelup-tshirt.webp"))
+                                .imagenes(Collections.singletonList(buildProductImage("PP001-levelup-tshirt.webp")))
                 .activo(true)
                 .build();
         productoRepository.save(pp001);
     }
+
+        private String buildProductImage(String fileName) {
+                if (StringUtils.hasText(s3BucketUrl)) {
+                        String base = s3BucketUrl.endsWith("/") ? s3BucketUrl.substring(0, s3BucketUrl.length() - 1) : s3BucketUrl;
+                        return base + "/products/" + fileName;
+                }
+                String seed = fileName.replace('.', '-');
+                return "https://picsum.photos/seed/levelup-" + seed + "/800/800";
+        }
 }

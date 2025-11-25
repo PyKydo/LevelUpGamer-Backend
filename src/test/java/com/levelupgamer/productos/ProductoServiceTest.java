@@ -1,6 +1,6 @@
 package com.levelupgamer.productos;
 
-import com.levelupgamer.common.S3Service;
+import com.levelupgamer.common.storage.FileStorageService;
 import com.levelupgamer.productos.dto.ProductoDTO;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -8,7 +8,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.mock.web.MockMultipartFile;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -18,6 +17,7 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.*;
 
 class ProductoServiceTest {
@@ -26,7 +26,7 @@ class ProductoServiceTest {
     private ProductoRepository productoRepository;
 
     @Mock
-    private S3Service s3Service;
+    private FileStorageService fileStorageService;
 
     @InjectMocks
     private ProductoService productoService;
@@ -68,7 +68,7 @@ class ProductoServiceTest {
         String imageUrl = "http://s3.test.url/test.jpg";
 
         when(productoRepository.existsByCodigo("P001")).thenReturn(false);
-        when(s3Service.uploadFile(any(), any(), anyLong())).thenReturn(imageUrl);
+        when(fileStorageService.uploadFile(any(), any(), anyLong())).thenReturn(imageUrl);
         when(productoRepository.save(any(Producto.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         
@@ -88,8 +88,20 @@ class ProductoServiceTest {
 
         
         assertThrows(IllegalArgumentException.class, () -> productoService.crearProducto(producto, mockImage));
-        verify(s3Service, never()).uploadFile(any(), any(), anyLong());
+        verify(fileStorageService, never()).uploadFile(any(), any(), anyLong());
         verify(productoRepository, never()).save(any(Producto.class));
+    }
+
+    @Test
+    void crearProducto_sinImagen_noSubeArchivo() throws IOException {
+        when(productoRepository.existsByCodigo("P001")).thenReturn(false);
+        when(productoRepository.save(any(Producto.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        ProductoDTO result = productoService.crearProducto(producto, null);
+
+        assertNotNull(result);
+        verify(fileStorageService, never()).uploadFile(any(), any(), anyLong());
+        verify(productoRepository, times(1)).save(any(Producto.class));
     }
 
     @Test

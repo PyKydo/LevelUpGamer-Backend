@@ -14,7 +14,7 @@ public class BlogService {
     private BlogRepository blogRepository;
 
     @Autowired
-    private com.levelupgamer.common.S3Service s3Service;
+    private com.levelupgamer.common.storage.FileStorageService storageService;
 
     @Transactional(readOnly = true)
     public List<BlogDTO> listarBlogs() {
@@ -27,8 +27,8 @@ public class BlogService {
     public BlogDTO crearBlog(Blog blog, org.springframework.web.multipart.MultipartFile imagen)
             throws java.io.IOException {
         if (imagen != null && !imagen.isEmpty()) {
-            String imageUrl = s3Service.uploadFile(imagen.getInputStream(), imagen.getOriginalFilename(),
-                    imagen.getSize());
+            String imageUrl = storageService.uploadFile(imagen.getInputStream(), imagen.getOriginalFilename(),
+                imagen.getSize());
             blog.setImagenUrl(imageUrl);
         }
         blog.setFechaPublicacion(java.time.LocalDate.now());

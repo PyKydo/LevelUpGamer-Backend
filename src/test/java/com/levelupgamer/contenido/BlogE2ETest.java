@@ -1,6 +1,6 @@
 package com.levelupgamer.contenido;
 
-import com.levelupgamer.common.S3Service;
+import com.levelupgamer.common.storage.FileStorageService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -28,7 +28,7 @@ class BlogE2ETest {
     private BlogService blogService;
 
     @Mock
-    private S3Service s3Service;
+    private FileStorageService fileStorageService;
 
     @Mock
     private RestTemplate restTemplate;
@@ -51,17 +51,14 @@ class BlogE2ETest {
     }
 
     @Test
-    void getBlogContent_fromS3_returnsMarkdown() throws Exception {
-        String bucket = "my-bucket";
-        String key = "blogs/1/blog.md";
-        String s3Url = "https://" + bucket + ".s3.amazonaws.com/" + key;
+    void getBlogContent_fromStorage_returnsMarkdown() throws Exception {
+        String s3Url = "https://my-bucket.s3.amazonaws.com/blogs/1/blog.md";
         String markdown = "# Hola desde S3";
 
         blog.setContenidoUrl(s3Url);
 
         when(blogService.buscarPorId(1L)).thenReturn(Optional.of(blog));
-        when(s3Service.getBucketName()).thenReturn(bucket);
-        when(s3Service.getFileContent(key)).thenReturn(markdown);
+        when(fileStorageService.readContentIfManaged(s3Url)).thenReturn(Optional.of(markdown));
 
         mockMvc.perform(get("/api/blog-posts/1/content"))
                 .andExpect(status().isOk())
@@ -77,6 +74,7 @@ class BlogE2ETest {
         blog.setContenidoUrl(publicUrl);
 
         when(blogService.buscarPorId(1L)).thenReturn(Optional.of(blog));
+        when(fileStorageService.readContentIfManaged(publicUrl)).thenReturn(Optional.empty());
         when(restTemplate.getForEntity(publicUrl, String.class))
                 .thenReturn(new ResponseEntity<>(markdown, HttpStatus.OK));
 
