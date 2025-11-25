@@ -110,7 +110,7 @@ Consulta `docs/personal/DEPLOYMENT.md` para el detalle de `EnvironmentFile` y el
 
 ## Despliegue
 
-- Provisiona PostgreSQL administrado (RDS/CloudSQL) y crea la base `levelupgamer` con usuario dedicado. Expone la cadena vía `DB_URL`, `DB_USER`, `DB_PASS`.
+- Provisiona PostgreSQL administrado (RDS) y crea la base `levelupgamer` con usuario dedicado. Expone la cadena vía `DB_URL`, `DB_USER`, `DB_PASS`.
 - Configura en el servidor un archivo `/etc/levelupgamer.env` (o variables del sistema) con las claves descritas en la sección **Variables de Entorno (Producción)**.
 - Empaqueta con `./mvnw clean package -DskipTests` y copia `target/levelupgamer-backend-*.jar` junto al unit file `src/main/resources/levelupgamer.service`.
 - Actualiza el unit file apuntando al path real del JAR y al archivo de variables, cópialo a `/etc/systemd/system/`, ejecuta `systemctl daemon-reload` y luego `systemctl enable --now levelupgamer`.
