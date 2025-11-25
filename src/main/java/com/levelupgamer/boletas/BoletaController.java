@@ -16,7 +16,7 @@ public class BoletaController {
     @Autowired
     private BoletaService boletaService;
 
-    @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'VENDEDOR', 'CLIENTE')")
+    @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'CLIENTE')")
     @PostMapping
     public ResponseEntity<BoletaRespuestaDTO> crearBoleta(@Valid @RequestBody BoletaCrearRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(boletaService.crearBoleta(request));

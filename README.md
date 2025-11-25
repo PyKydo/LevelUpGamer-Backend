@@ -6,7 +6,7 @@ Todos los endpoints REST están versionados bajo el prefijo `/api/v1/...` (ej. `
 
 ## Características Principales
 
-- **Usuarios y roles**: registro con validaciones de RUN y dominios permitidos, contraseñas hasheadas con BCrypt y roles `ADMINISTRADOR` y `CLIENTE`.
+- **Usuarios y roles**: registro con validaciones de RUN y dominios permitidos, contraseñas hasheadas con BCrypt y roles `ADMINISTRADOR`, `VENDEDOR` (lectura de catálogo/boletas) y `CLIENTE`.
 - **Autenticación JWT**: login con selección explícita de rol cuando un usuario posee múltiples perfiles, emisión de tokens de acceso y refresh + endpoint de cambio de contraseña.
 - **Catálogo y stock**: CRUD de productos, carga de imágenes a S3, alertas de stock crítico en logs, campo `puntosLevelUp` (0-1000 en saltos de 100) para gamificación y endpoint de destacados (`GET /api/v1/products/featured`).
 - **Carrito persistente + Boletas**: carritos por usuario, generación de boletas (`POST /api/v1/boletas`) que descuentan stock, calculan subtotales y asignan puntos multiplicando `producto.puntosLevelUp * cantidad`; soporte para descuentos combinados (20% correos Duoc + cupones con tope 90%).
@@ -62,7 +62,7 @@ Consulta `docs/personal/DEPLOYMENT.md` para el detalle de `EnvironmentFile` y el
 
 ## Datos Semilla y Archivos S3
 
-- `DataInitializer`, `ProductDataInitializer` y `BlogDataInitializer` crean usuarios, productos e historias de blog cuando la base está vacía (perfiles `!test`).
+- `DataInitializer`, `ProductDataInitializer` y `BlogDataInitializer` crean usuarios, productos e historias de blog cuando la base está vacía (perfiles `!test`). El seed incluye cuentas demo de administrador, cliente y vendedor para probar los distintos roles.
 - El contenido markdown de ejemplo vive en `s3-files/contenido/*.md`; al subirlo a S3 respeta la misma estructura (`blogs/{n}/blog.md`).
 - Para desarrollo se puede apuntar `aws.s3.bucket.url` a un bucket público o a un mock (ej: LocalStack).
 
@@ -82,8 +82,9 @@ Consulta `docs/personal/DEPLOYMENT.md` para el detalle de `EnvironmentFile` y el
 - Filtro `JwtAutenticacionFilter` agrega `SecurityContext` a partir del header `Authorization: Bearer <token>`.
 - `SecurityConfig` habilita CORS global (`*`) y define accesos:
   - Público: `/`, `/api/v1/auth/login`, `/api/v1/auth/refresh`, `/api/v1/users/register`, `/api/v1/blog-posts/**`, `/api/v1/contact-messages`, `/swagger-ui/**`, `/v3/api-docs/**`.
-  - Requiere autenticación: `/api/v1/users/{id}`, `/api/v1/products/**`, `/api/v1/boletas/**`, `/api/v1/points/**`, `/api/v1/cart/**`, `/api/v1/reviews/**`.
-  - Solo admins: `/api/v1/users`, `/api/v1/users/roles`, `/api/v1/users/admin`, mutaciones de productos y blogs.
+  - Requiere autenticación: `/api/v1/users/{id}`, `/api/v1/products/**`, `/api/v1/categories/**`, `/api/v1/boletas/**`, `/api/v1/points/**`, `/api/v1/cart/**`, `/api/v1/reviews/**`.
+  - Rol vendedor: `VENDEDOR` puede leer (`GET`) `/api/v1/products/**`, `/api/v1/categories/**` y `/api/v1/boletas/**` para seguimiento comercial, pero no crear/editar recursos.
+  - Solo admins: `/api/v1/users`, `/api/v1/users/roles`, `/api/v1/users/admin`, mutaciones de productos, categorías y blogs.
 - Errores se devuelven como `{ "error": "mensaje" }` o mapas campo -> error en validaciones.
 
 ## Pruebas
@@ -104,7 +105,7 @@ Consulta `docs/personal/DEPLOYMENT.md` para el detalle de `EnvironmentFile` y el
 
 1. Configura (opcional) `aws.s3.bucket.name`, `aws.region`, `aws.accessKey`, `aws.secretKey` en `application-dev.properties` o variables de entorno.
 2. Ejecuta `./mvnw spring-boot:run` (perfil `dev` activado por defecto).
-3. Usa las credenciales sembradas (por ejemplo `admin@gmail.com / admin123`).
+3. Usa las credenciales sembradas (por ejemplo `admin@gmail.com / admin123`). También están disponibles `cliente@gmail.com / cliente123` y `vendedor@gmail.com / vendedor123` para validar los roles CLIENTE y VENDEDOR.
 4. Abre Swagger para probar los endpoints o consulta la guía en `docs/personal/API Endpoints.md`.
 
 ## Despliegue

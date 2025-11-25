@@ -39,6 +39,7 @@ public class DataInitializer implements CommandLineRunner {
         }
     }
 
+    @SuppressWarnings("null")
     private void createUsers() {
         // 1. Usuario Admin
         HashSet<RolUsuario> adminRoles = new HashSet<>();
@@ -109,5 +110,30 @@ public class DataInitializer implements CommandLineRunner {
                 .isDuocUser(true)
                 .build();
         usuarioRepository.save(matias);
+
+        // 4. Usuario Vendedor
+        HashSet<RolUsuario> vendedorRoles = new HashSet<>();
+        vendedorRoles.add(RolUsuario.VENDEDOR);
+        Usuario vendedor = Usuario.builder()
+            .run("444444444")
+            .nombre("Vendedor")
+            .apellidos("Demo")
+            .correo("vendedor@gmail.com")
+            .contrasena(passwordEncoder.encode("vendedor123"))
+            .fechaNacimiento(LocalDate.of(1992, 3, 15))
+            .region("Biobío")
+            .comuna("Concepción")
+            .direccion("Calle Comercio 123")
+            .roles(vendedorRoles)
+            .activo(true)
+            .isDuocUser(false)
+            .build();
+        usuarioRepository.save(vendedor);
+
+        Puntos puntosVendedor = Puntos.builder()
+            .usuario(vendedor)
+            .puntosAcumulados(0)
+            .build();
+        puntosRepository.save(puntosVendedor);
     }
 }

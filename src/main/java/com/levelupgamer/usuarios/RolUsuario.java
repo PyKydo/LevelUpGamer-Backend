@@ -2,5 +2,6 @@ package com.levelupgamer.usuarios;
 
 public enum RolUsuario {
     ADMINISTRADOR,
-    CLIENTE
+    CLIENTE,
+    VENDEDOR
 }

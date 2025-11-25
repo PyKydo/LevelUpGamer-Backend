@@ -47,7 +47,14 @@ public class SecurityConfig {
                 
                 .requestMatchers(HttpMethod.GET, "/api/v1/users/{id}").authenticated()
                 .requestMatchers(HttpMethod.PUT, "/api/v1/users/{id}").authenticated()
-                .requestMatchers("/api/v1/products/**").hasAnyRole("ADMINISTRADOR", "CLIENTE")
+
+                .requestMatchers(HttpMethod.GET, "/api/v1/products/**").hasAnyRole("ADMINISTRADOR", "CLIENTE", "VENDEDOR")
+                .requestMatchers("/api/v1/products/**").hasRole("ADMINISTRADOR")
+
+                .requestMatchers(HttpMethod.GET, "/api/v1/categories/**").hasAnyRole("ADMINISTRADOR", "CLIENTE", "VENDEDOR")
+                .requestMatchers("/api/v1/categories/**").hasRole("ADMINISTRADOR")
+
+                .requestMatchers(HttpMethod.GET, "/api/v1/boletas/**").hasAnyRole("ADMINISTRADOR", "CLIENTE", "VENDEDOR")
                 .requestMatchers("/api/v1/boletas/**").hasAnyRole("ADMINISTRADOR", "CLIENTE")
                 .requestMatchers("/api/v1/points/**").authenticated()
 
