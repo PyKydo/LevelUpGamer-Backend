@@ -104,7 +104,7 @@ class CarritoServiceTest {
         carritoService.addProductToCart(1L, 1L, 3);
 
         assertThat(carrito.getItems()).hasSize(1);
-        assertThat(carrito.getItems().get(0).getQuantity()).isEqualTo(4); // 1 + 3
+        assertThat(carrito.getItems().get(0).getQuantity()).isEqualTo(4); 
         verify(carritoRepository).save(carrito);
     }
 

@@ -1,6 +1,8 @@
 package com.levelupgamer.pedidos;
 
 import com.levelupgamer.gamificacion.PuntosService;
+import com.levelupgamer.gamificacion.cupones.Cupon;
+import com.levelupgamer.gamificacion.cupones.CuponService;
 import com.levelupgamer.gamificacion.dto.PuntosDTO;
 import com.levelupgamer.pedidos.dto.PedidoCrearDTO;
 import com.levelupgamer.pedidos.dto.PedidoItemCrearDTO;
@@ -20,6 +22,7 @@ import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -27,14 +30,13 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class PedidoService {
     private static final Logger logger = LoggerFactory.getLogger(PedidoService.class);
-    private static final int POINTS_PER_TEN_UNITS = 1;
     private static final String DUOC_DOMAIN = "duoc.cl";
     private static final String PROFESOR_DUOC_DOMAIN = "profesor.duoc.cl";
-    private static final BigDecimal DESCUENTO_DUOC = new BigDecimal("0.8");
     private final PedidoRepository pedidoRepository;
     private final UsuarioRepository usuarioRepository;
     private final ProductoRepository productoRepository;
     private final PuntosService puntosService;
+    private final CuponService cuponService;
 
     /**
      * Crea un nuevo pedido para un usuario.
@@ -44,11 +46,16 @@ public class PedidoService {
      */
     @Transactional
     public PedidoRespuestaDTO crearPedido(PedidoCrearDTO dto) {
+        Objects.requireNonNull(dto, "El pedido no puede ser nulo");
         Usuario usuario = obtenerUsuario(dto.getUsuarioId());
+        List<PedidoItemCrearDTO> itemsSolicitados = Optional.ofNullable(dto.getItems())
+            .filter(l -> !l.isEmpty())
+            .orElseThrow(() -> new IllegalArgumentException("El pedido debe incluir al menos un producto"));
         List<PedidoItem> items = new ArrayList<>();
         BigDecimal total = BigDecimal.ZERO;
+        int puntosGanados = 0;
 
-        for (PedidoItemCrearDTO itemDTO : dto.getItems()) {
+        for (PedidoItemCrearDTO itemDTO : itemsSolicitados) {
             Producto producto = obtenerProducto(itemDTO.getProductoId());
             validarStock(producto, itemDTO.getCantidad());
 
@@ -58,12 +65,20 @@ public class PedidoService {
             PedidoItem item = crearItemPedido(producto, itemDTO, precioUnitario, subtotal);
             items.add(item);
             total = total.add(subtotal);
+            int puntosProducto = producto.getPuntosLevelUp() != null ? producto.getPuntosLevelUp() : 0;
+            puntosGanados += puntosProducto * itemDTO.getCantidad();
 
             actualizarStock(producto, itemDTO.getCantidad());
         }
 
-        Pedido pedido = guardarPedido(usuario, items, total);
-        procesarPuntos(usuario, total);
+        Cupon cuponAplicado = procesarCupon(dto, usuario);
+        DescuentoContexto descuentos = calcularDescuentos(total, usuario, cuponAplicado);
+
+        Pedido pedido = guardarPedido(usuario, items, descuentos, cuponAplicado);
+        procesarPuntos(usuario, puntosGanados);
+        if (cuponAplicado != null) {
+            cuponService.marcarComoUsado(cuponAplicado);
+        }
 
         return PedidoMapper.toDTO(pedido);
     }
@@ -76,6 +91,7 @@ public class PedidoService {
      */
     @Transactional(readOnly = true)
     public List<PedidoRespuestaDTO> listarPedidosPorUsuario(Long usuarioId) {
+        Objects.requireNonNull(usuarioId, "El id de usuario no puede ser nulo");
         return pedidoRepository.findByUsuarioId(usuarioId).stream()
                 .map(PedidoMapper::toDTO)
                 .collect(Collectors.toList());
@@ -89,17 +105,20 @@ public class PedidoService {
      */
     @Transactional(readOnly = true)
     public Optional<Pedido> buscarPorId(Long id) {
+        Objects.requireNonNull(id, "El id de pedido no puede ser nulo");
         return pedidoRepository.findById(id);
     }
 
     // --- Métodos Auxiliares ---
 
     private Usuario obtenerUsuario(Long usuarioId) {
+        Objects.requireNonNull(usuarioId, "El id de usuario no puede ser nulo");
         return usuarioRepository.findById(usuarioId)
                 .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado"));
     }
 
     private Producto obtenerProducto(Long productoId) {
+        Objects.requireNonNull(productoId, "El id de producto no puede ser nulo");
         return productoRepository.findById(productoId)
                 .orElseThrow(() -> new IllegalArgumentException("Producto no encontrado"));
     }
@@ -111,13 +130,7 @@ public class PedidoService {
     }
 
     private BigDecimal calcularPrecioUnitario(Producto producto, Usuario usuario) {
-        BigDecimal precioUnitario = producto.getPrecio();
-        boolean isDuocUser = usuario.getCorreo().endsWith(DUOC_DOMAIN)
-                || usuario.getCorreo().endsWith(PROFESOR_DUOC_DOMAIN);
-        if (isDuocUser) {
-            precioUnitario = precioUnitario.multiply(DESCUENTO_DUOC).setScale(2, RoundingMode.HALF_UP);
-        }
-        return precioUnitario;
+        return producto.getPrecio();
     }
 
     private PedidoItem crearItemPedido(Producto producto, PedidoItemCrearDTO itemDTO, BigDecimal precioUnitario,
@@ -140,21 +153,48 @@ public class PedidoService {
         }
     }
 
-    private Pedido guardarPedido(Usuario usuario, List<PedidoItem> items, BigDecimal total) {
+    private Pedido guardarPedido(Usuario usuario, List<PedidoItem> items, DescuentoContexto descuentos, Cupon cupon) {
         Pedido pedido = new Pedido();
         pedido.setUsuario(usuario);
         pedido.setItems(items);
-        pedido.setTotal(total);
+        pedido.setTotalAntesDescuentos(descuentos.totalOriginal());
+        pedido.setTotal(descuentos.totalFinal());
+        pedido.setCupon(cupon);
+        pedido.setDescuentoCuponAplicado(descuentos.descuentoCupon());
+        pedido.setDescuentoDuocAplicado(descuentos.descuentoDuoc());
         pedido.setFecha(LocalDateTime.now());
         pedido.setEstado(EstadoPedido.PENDIENTE);
         items.forEach(item -> item.setPedido(pedido));
         return pedidoRepository.save(pedido);
     }
 
-    private void procesarPuntos(Usuario usuario, BigDecimal total) {
-        int puntosGanados = total.divide(BigDecimal.TEN, 0, RoundingMode.DOWN).intValue() * POINTS_PER_TEN_UNITS;
+    private void procesarPuntos(Usuario usuario, int puntosGanados) {
         if (puntosGanados > 0) {
             puntosService.sumarPuntos(new PuntosDTO(usuario.getId(), puntosGanados));
         }
     }
+
+    private Cupon procesarCupon(PedidoCrearDTO dto, Usuario usuario) {
+        if (dto.getCuponId() == null && dto.getCodigoCupon() == null) {
+            return null;
+        }
+        return cuponService.buscarCuponValido(usuario.getId(), dto.getCuponId(), dto.getCodigoCupon())
+                .orElseThrow(() -> new IllegalArgumentException("Cupón inválido o no disponible"));
+    }
+
+    private DescuentoContexto calcularDescuentos(BigDecimal total, Usuario usuario, Cupon cupon) {
+        boolean isDuocUser = usuario.getCorreo().endsWith(DUOC_DOMAIN)
+                || usuario.getCorreo().endsWith(PROFESOR_DUOC_DOMAIN);
+        int descuentoDuoc = isDuocUser ? 20 : 0;
+        int descuentoCupon = cupon != null ? cupon.getPorcentajeDescuento() : 0;
+
+        int descuentoTotal = Math.min(descuentoDuoc + descuentoCupon, 90);
+        BigDecimal factor = BigDecimal.valueOf(100 - descuentoTotal)
+                .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
+        BigDecimal totalConDescuento = total.multiply(factor).setScale(2, RoundingMode.HALF_UP);
+
+        return new DescuentoContexto(total, totalConDescuento, descuentoDuoc, descuentoCupon);
+    }
+
+    private record DescuentoContexto(BigDecimal totalOriginal, BigDecimal totalFinal, Integer descuentoDuoc, Integer descuentoCupon) {}
 }

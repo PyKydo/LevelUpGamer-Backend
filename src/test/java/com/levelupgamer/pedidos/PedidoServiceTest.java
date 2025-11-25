@@ -1,6 +1,9 @@
 package com.levelupgamer.pedidos;
 
 import com.levelupgamer.gamificacion.PuntosService;
+import com.levelupgamer.gamificacion.cupones.Cupon;
+import com.levelupgamer.gamificacion.cupones.CuponService;
+import com.levelupgamer.gamificacion.cupones.EstadoCupon;
 import com.levelupgamer.gamificacion.dto.PuntosDTO;
 import com.levelupgamer.pedidos.dto.PedidoCrearDTO;
 import com.levelupgamer.pedidos.dto.PedidoItemCrearDTO;
@@ -25,6 +28,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
+@SuppressWarnings("null")
 class PedidoServiceTest {
 
     @Mock
@@ -37,7 +41,10 @@ class PedidoServiceTest {
     private ProductoRepository productoRepository;
 
     @Mock
-    private PuntosService puntosService; // Mockear el servicio de puntos
+    private PuntosService puntosService;
+
+    @Mock
+    private CuponService cuponService;
 
     @InjectMocks
     private PedidoService pedidoService;
@@ -62,6 +69,7 @@ class PedidoServiceTest {
         producto.setPrecio(new BigDecimal("100.00"));
         producto.setStock(10);
         producto.setStockCritico(5);
+        producto.setPuntosLevelUp(100);
 
         PedidoItemCrearDTO itemDTO = new PedidoItemCrearDTO();
         itemDTO.setProductoId(1L);
@@ -74,55 +82,83 @@ class PedidoServiceTest {
 
     @Test
     void crearPedido_conDatosValidos_creaPedidoYActualizaStock() {
-        // Given
+        
         when(usuarioRepository.findById(1L)).thenReturn(Optional.of(usuario));
         when(productoRepository.findById(1L)).thenReturn(Optional.of(producto));
         when(pedidoRepository.save(any(Pedido.class))).thenAnswer(invocation -> invocation.getArgument(0));
         
-        // When
+        
         PedidoRespuestaDTO result = pedidoService.crearPedido(pedidoCrearDTO);
 
-        // Then
+        
         assertNotNull(result);
+        assertEquals(new BigDecimal("200.00"), result.getTotalAntesDescuentos());
         assertEquals(new BigDecimal("200.00"), result.getTotal());
         assertEquals(8, producto.getStock());
         
-        // Verificar que se llamó a sumarPuntos con la cantidad correcta
-        verify(puntosService, times(1)).sumarPuntos(new PuntosDTO(1L, 20));
+        
+        verify(puntosService, times(1)).sumarPuntos(new PuntosDTO(1L, 200));
         verify(productoRepository, times(1)).save(producto);
         verify(pedidoRepository, times(1)).save(any(Pedido.class));
+        verifyNoInteractions(cuponService);
     }
 
     @Test
     void crearPedido_conUsuarioDuoc_aplicaDescuento() {
-        // Given
+        
         usuario.setIsDuocUser(true);
         usuario.setCorreo("test@duoc.cl");
         when(usuarioRepository.findById(1L)).thenReturn(Optional.of(usuario));
         when(productoRepository.findById(1L)).thenReturn(Optional.of(producto));
         when(pedidoRepository.save(any(Pedido.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        // When
+        
         PedidoRespuestaDTO result = pedidoService.crearPedido(pedidoCrearDTO);
 
-        // Then
-        assertNotNull(result);
-        assertEquals(new BigDecimal("160.00"), result.getTotal());
         
-        // Verificar que se llamó a sumarPuntos con la cantidad correcta (160 / 10)
-        verify(puntosService, times(1)).sumarPuntos(new PuntosDTO(1L, 16));
+        assertNotNull(result);
+        assertEquals(new BigDecimal("200.00"), result.getTotalAntesDescuentos());
+        assertEquals(new BigDecimal("160.00"), result.getTotal());
+        assertEquals(20, result.getDescuentoDuoc());
+        
+        
+        verify(puntosService, times(1)).sumarPuntos(new PuntosDTO(1L, 200));
+    }
+
+    @Test
+    void crearPedido_conCuponAplicaDescuentoYLoMarcaUsado() {
+        Cupon cupon = new Cupon();
+        cupon.setId(99L);
+        cupon.setPorcentajeDescuento(10);
+        cupon.setEstado(EstadoCupon.ACTIVO);
+
+        pedidoCrearDTO.setCuponId(99L);
+
+        when(usuarioRepository.findById(1L)).thenReturn(Optional.of(usuario));
+        when(productoRepository.findById(1L)).thenReturn(Optional.of(producto));
+        when(cuponService.buscarCuponValido(1L, 99L, null)).thenReturn(Optional.of(cupon));
+        when(pedidoRepository.save(any(Pedido.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        PedidoRespuestaDTO result = pedidoService.crearPedido(pedidoCrearDTO);
+
+        assertEquals(new BigDecimal("200.00"), result.getTotalAntesDescuentos());
+        assertEquals(new BigDecimal("180.00"), result.getTotal());
+        assertEquals(10, result.getDescuentoCupon());
+        assertEquals(0, result.getDescuentoDuoc());
+        verify(cuponService).buscarCuponValido(1L, 99L, null);
+        verify(cuponService).marcarComoUsado(cupon);
     }
 
     @Test
     void crearPedido_conStockInsuficiente_lanzaExcepcion() {
-        // Given
+        
         producto.setStock(1);
         when(usuarioRepository.findById(1L)).thenReturn(Optional.of(usuario));
         when(productoRepository.findById(1L)).thenReturn(Optional.of(producto));
 
-        // When & Then
+        
         assertThrows(IllegalArgumentException.class, () -> pedidoService.crearPedido(pedidoCrearDTO));
         verify(pedidoRepository, never()).save(any(Pedido.class));
-        verify(puntosService, never()).sumarPuntos(any()); // No se deben sumar puntos si falla
+        verify(puntosService, never()).sumarPuntos(any()); 
     }
 }

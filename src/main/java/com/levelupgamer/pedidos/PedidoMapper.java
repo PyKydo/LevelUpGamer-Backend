@@ -11,6 +11,11 @@ public class PedidoMapper {
         dto.setUsuarioId(pedido.getUsuario() != null ? pedido.getUsuario().getId() : null);
         dto.setItems(toItemDTOList(pedido.getItems()));
         dto.setTotal(pedido.getTotal());
+        dto.setTotalAntesDescuentos(pedido.getTotalAntesDescuentos());
+        dto.setDescuentoCupon(pedido.getDescuentoCuponAplicado());
+        dto.setDescuentoDuoc(pedido.getDescuentoDuocAplicado());
+        dto.setCuponCodigo(pedido.getCupon() != null ? pedido.getCupon().getCodigo() : null);
+        dto.setCuponId(pedido.getCupon() != null ? pedido.getCupon().getId() : null);
         dto.setFecha(pedido.getFecha());
         dto.setEstado(pedido.getEstado() != null ? pedido.getEstado().name() : null);
         return dto;

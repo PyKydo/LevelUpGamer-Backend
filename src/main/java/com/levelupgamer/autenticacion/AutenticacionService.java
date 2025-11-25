@@ -35,12 +35,12 @@ public class AutenticacionService {
             throw new BadCredentialsException("Usuario o contraseña inválidos");
         }
 
-        // Si se proporciona un rol, validar que el usuario lo tenga
+        
         if (loginRequest.getRol() != null) {
             if (!usuario.getRoles().contains(loginRequest.getRol())) {
                 throw new BadCredentialsException("El usuario no tiene el rol seleccionado");
             }
-            // Generar token con el rol seleccionado
+            
             String accessToken = jwtProvider.generateAccessToken(usuario, loginRequest.getRol());
             String refreshToken = jwtProvider.generateRefreshToken(usuario);
 
@@ -52,12 +52,12 @@ public class AutenticacionService {
                     .build();
         }
 
-        // Si no se proporciona rol y tiene más de un rol, error (o requerir selección)
+        
         if (usuario.getRoles().size() > 1) {
             throw new BadCredentialsException("El usuario tiene múltiples roles. Debe seleccionar uno.");
         }
 
-        // Si tiene un solo rol, flujo normal
+        
         String accessToken = jwtProvider.generateAccessToken(usuario);
         String refreshToken = jwtProvider.generateRefreshToken(usuario);
 
@@ -81,7 +81,7 @@ public class AutenticacionService {
 
             return LoginResponseDTO.builder()
                     .accessToken(newAccessToken)
-                    .refreshToken(refreshToken) // Se puede devolver el mismo refresh token
+                    .refreshToken(refreshToken) 
                     .roles(usuario.getRoles().stream().map(RolUsuario::name).collect(Collectors.toList()))
                     .usuarioId(usuario.getId())
                     .build();

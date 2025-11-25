@@ -42,7 +42,7 @@ class ContenidoE2ETest {
 
     @Test
     void deberiaListarEntradasDeBlog() throws Exception {
-        // Given: creamos una entrada de blog
+        
         Blog blog = Blog.builder()
                 .titulo("Blog de Prueba E2E")
                 .autor("Tester")
@@ -53,7 +53,7 @@ class ContenidoE2ETest {
                 .build();
         blogRepository.save(blog);
 
-        // When & Then: llamamos al endpoint y verificamos la respuesta
+        
         mockMvc.perform(get("/api/blog-posts"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(1)))
@@ -62,14 +62,14 @@ class ContenidoE2ETest {
 
     @Test
     void deberiaEnviarMensajeDeContacto() throws Exception {
-        // Given
+        
         ContactoDTO contactoDTO = ContactoDTO.builder()
                 .nombre("Usuario de Contacto")
                 .correo("contacto@example.com")
                 .comentario("Este es un mensaje de prueba E2E.")
                 .build();
 
-        // When & Then: llamamos al endpoint y verificamos la respuesta
+        
         mockMvc.perform(post("/api/contact-messages")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(contactoDTO)))

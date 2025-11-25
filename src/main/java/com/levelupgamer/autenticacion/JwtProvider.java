@@ -17,7 +17,7 @@ import java.util.stream.Collectors;
 public class JwtProvider {
     private final String jwtSecret = "levelupgamerSecretKey123!levelupgamerSecretKey123!MoreBytesNeeded!!";
     private final long jwtAccessExpirationMs = 3600000; // 1 hora
-    private final long jwtRefreshExpirationMs = 604800000; // 7 días
+    private final long jwtRefreshExpirationMs = 604800000; // 7 dias
 
     private Key key;
 
@@ -54,7 +54,7 @@ public class JwtProvider {
                 .claim("type", "PRE_AUTH")
                 .claim("usuarioId", usuario.getId())
                 .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis() + 300000)) // 5 minutes
+                .setExpiration(new Date(System.currentTimeMillis() + 300000)) // 5 minutos
                 .signWith(key, SignatureAlgorithm.HS512)
                 .compact();
     }

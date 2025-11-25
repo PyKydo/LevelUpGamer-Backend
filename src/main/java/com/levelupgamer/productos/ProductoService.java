@@ -34,6 +34,8 @@ public class ProductoService {
             throw new IllegalArgumentException("Código de producto ya existe");
         }
 
+        producto.setPuntosLevelUp(normalizarPuntos(producto.getPuntosLevelUp()));
+
         // Subir la imagen a S3 y obtener la URL
         String imageUrl = s3Service.uploadFile(imagen.getInputStream(), imagen.getOriginalFilename(), imagen.getSize());
         producto.setImagenes(Collections.singletonList(imageUrl));
@@ -55,11 +57,19 @@ public class ProductoService {
             producto.setStock(nuevo.getStock());
             producto.setStockCritico(nuevo.getStockCritico());
             producto.setCategoria(nuevo.getCategoria());
+            producto.setPuntosLevelUp(normalizarPuntos(nuevo.getPuntosLevelUp()));
             // La actualización de imágenes requeriría un endpoint separado
             // producto.setImagenes(nuevo.getImagenes());
             productoRepository.save(producto);
             return producto;
         });
+    }
+
+    @Transactional(readOnly = true)
+    public List<ProductoDTO> listarDestacados() {
+        return productoRepository.findTop5ByActivoTrueOrderByPuntosLevelUpDesc().stream()
+                .map(ProductoMapper::toDTO)
+                .collect(Collectors.toList());
     }
 
     public boolean eliminarProducto(Long id) {
@@ -74,5 +84,15 @@ public class ProductoService {
         if (producto.getStock() != null && producto.getStockCritico() != null && producto.getStock() <= producto.getStockCritico()) {
             System.out.println("ALERTA: Stock crítico para producto " + producto.getNombre());
         }
+    }
+
+    private int normalizarPuntos(Integer puntos) {
+        if (puntos == null) {
+            return 0;
+        }
+        if (puntos < 0 || puntos > 1000 || puntos % 100 != 0) {
+            throw new IllegalArgumentException("puntosLevelUp debe estar entre 0 y 1000 en incrementos de 100");
+        }
+        return puntos;
     }
 }

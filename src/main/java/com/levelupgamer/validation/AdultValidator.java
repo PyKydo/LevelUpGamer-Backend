@@ -12,7 +12,7 @@ public class AdultValidator implements ConstraintValidator<Adult, LocalDate> {
     @Override
     public boolean isValid(LocalDate fechaNacimiento, ConstraintValidatorContext context) {
         if (fechaNacimiento == null) {
-            // La fecha de nacimiento es obligatoria; si es nula, no es válida
+            
             return false;
         }
         return Period.between(fechaNacimiento, LocalDate.now()).getYears() >= MIN_AGE;

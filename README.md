@@ -1,289 +1,118 @@
 # LevelUpGamer Backend
 
-Backend para la tienda online LevelUpGamer, desarrollado como un monolito modular con Java 21 y Spring Boot. El proyecto gestiona usuarios, productos, carritos de compra, pedidos, contenido y un programa de gamificación.
+Backend monolito modular para la tienda LevelUpGamer, construido con Java 21 y Spring Boot 3.5. La aplicación concentra autenticación JWT, catálogo de productos, carritos, pedidos, blogs, reseñas y gamificación en un único despliegue.
 
 ## Características Principales
 
-- **Gestión de Usuarios:** Registro, autenticación con JWT y roles (Administrador, Cliente).
-- **Catálogo de Productos:** Administración de productos, categorías y control de stock.
-- **Carrito de Compras:** Lógica para agregar, ver y modificar el contenido del carrito de un usuario.
-- **Sistema de Pedidos:** Creación y seguimiento de pedidos a partir del carrito.
-- **Gamificación:** Programa de puntos por compras y sistema de referidos.
-- **Descuentos:** Lógica de descuentos para usuarios con correos específicos (Duoc).
-- **Notificaciones:** Alertas de stock crítico.
-- **Monitorización:** Endpoints de Actuator para supervisión de la salud y métricas de la aplicación.
+- **Usuarios y roles**: registro con validaciones de RUN y dominios permitidos, contraseñas hasheadas con BCrypt y roles `ADMINISTRADOR`, `VENDEDOR` y `CLIENTE`.
+- **Autenticación JWT**: login con selección explícita de rol cuando un usuario posee múltiples perfiles, emisión de tokens de acceso y refresh + endpoint de cambio de contraseña.
+- **Catálogo y stock**: CRUD de productos, carga de imágenes a S3, alertas de stock crítico en logs, campo `puntosLevelUp` (0-1000 en saltos de 100) para gamificación y endpoint de destacados (`GET /api/products/featured`).
+- **Carrito persistente + Pedidos**: carritos por usuario, generación de pedidos que descuentan stock, calculan subtotales y asignan puntos sumando `puntosLevelUp` de cada producto; soporte para descuentos combinados (20% correos Duoc + cupones con tope 90%).
+- **Contenido**: blogs con cabeceras e imágenes almacenadas en S3 y recuperación del contenido en formato Markdown; formulario de contacto persistido en BD.
+- **Programa de puntos y referidos**: saldo de puntos en tabla dedicada (`Puntos`) con operaciones de earn/redeem, conversión de puntos a cupones (%5-%30) y bonificación automática a referidos en el registro.
+- **Reseñas**: publicación y listado de reseñas por producto (hoy cualquier usuario autenticado puede reseñar; la verificación de compra queda como mejora pendiente).
+- **Observabilidad y documentación**: Swagger UI (`/swagger-ui/index.html`), Actuator y documentación funcional en `docs/personal`.
 
-## Tecnologías Utilizadas
+## Tecnologías y Dependencias Clave
 
-- **Lenguaje:** Java 21
-- **Framework:** Spring Boot 3.x
-- **Base de Datos:**
-  - H2 (para perfil `dev`)
-  - PostgreSQL (para perfil `prod`)
-- **Seguridad:** Spring Security, JWT
-- **Documentación de API:** SpringDoc (OpenAPI/Swagger)
-- **Validación:** Spring Validation
-- **Mapeo de Objetos:** Custom Mappers
-- **Servicios AWS:** S3 (para almacenamiento de archivos).
-- **Build Tool:** Maven
+- **Spring Boot Starter Stack**: Web, Data JPA, Security, Validation, Actuator y DevTools.
+- **Persistencia**: H2 en `dev`/`test`, PostgreSQL en `prod`, Flyway listo para migraciones (deshabilitado en prod hasta definir scripts).
+- **Seguridad**: Spring Security + filtros JWT personalizados (`JwtAutenticacionFilter`, `JwtProvider`).
+- **Validaciones personalizadas**: anotaciones `@Rut`, `@Adult` y `@AllowedEmailDomain` con factoría de validadores registrada en `ValidationConfig`.
+- **Integraciones AWS**: SDK v2 para S3 y SES (pendiente de uso), `S3Service` para subir/leer imágenes y markdown desde buckets públicos.
+- **Herramientas**: Lombok, SpringDoc OpenAPI (`springdoc-openapi-starter-webmvc-ui`), Maven Wrapper.
 
-## Estructura del Proyecto
+## Arquitectura por Dominios
 
-El backend está diseñado como un monolito modular. Cada dominio de negocio está encapsulado en su propio paquete, lo que facilita el mantenimiento y la posible migración a microservicios en el futuro.
+Cada dominio vive bajo `com.levelupgamer.{dominio}` y expone controladores REST bajo `/api/{dominio}`:
 
-- `com.levelupgamer.autenticacion`: Autenticación y seguridad.
-- `com.levelupgamer.usuarios`: Gestión de usuarios.
-- `com.levelupgamer.productos`: Gestión de productos y categorías.
-- `com.levelupgamer.pedidos`: Gestión de carritos y pedidos.
-- `com.levelupgamer.contenido`: Gestión de blogs y mensajes de contacto.
-- `com.levelupgamer.gamificacion`: Lógica de puntos y referidos.
-- `com.levelupgamer.common`: Clases y servicios comunes.
-- `com.levelupgamer.config`: Clases de configuración (ej: AWS, perfiles).
-- `com.levelupgamer.exception`: Manejo de excepciones globales.
+- `autenticacion`: login, refresh, cambio de contraseña, configuración de seguridad y filtros JWT.
+- `usuarios`: entidades, DTOs, mappers y servicios para usuarios, roles y referidos.
+- `productos`: productos, categorías, reseñas, `puntosLevelUp` y seeding inicial (`ProductDataInitializer`).
+- `pedidos`: carritos persistentes, pedidos, DTOs y lógica de puntos/stock/alertas con descuentos compuestos y trazabilidad de cupones usados.
+- `gamificacion`: entidad `Puntos`, repositorio y servicios de earn/redeem + módulo de cupones con conversión, listado y canje.
+- `contenido`: blogs (lectura desde S3), mensajes de contacto y seeds (`BlogDataInitializer`).
+- `common` y `config`: integraciones S3, validación, inicializadores y beans utilitarios.
+- `exception`: `GlobalExceptionHandler` con formato consistente de errores.
 
-## API Endpoints
+## Perfiles, Puertos y Configuración
 
-La arquitectura del sistema expone una interfaz de programación de aplicaciones (API) basada en los principios REST (Representational State Transfer). Todos los recursos son accesibles a través de la URL base `/api`. A continuación, se detalla la especificación de los endpoints disponibles, organizados por dominio funcional.
+- **Puerto por defecto**: `8081` (configurable vía `server.port`).
+- **Perfil activo estándar**: `dev` (H2 en memoria y consola H2 habilitada).
+- **Perfiles**:
+  - `dev`: H2 (`jdbc:h2:mem:testdb`), bucket/region definidos en `application-dev.properties` (actualizar `aws.s3.bucket.name`).
+  - `test`: H2 aislado + propiedades dummy para AWS (`application-test.properties`).
+  - `prod`: PostgreSQL via `DB_URL`, deshabilita Flyway temporalmente y toma bucket/region/credenciales desde variables de entorno.
 
-### 1. Autenticación y Seguridad
-Controlador: `AutenticacionController`
-Ruta base: `/api/auth`
+### Variables de Entorno para `prod`
 
-Este módulo gestiona el ciclo de vida de la sesión del usuario y la seguridad de las credenciales.
+| Variable | Descripción |
+| --- | --- |
+| `DB_URL`, `DB_USER`, `DB_PASSWORD` | Datos de conexión a PostgreSQL. |
+| `AWS_REGION` | Región del bucket S3 (ej: `us-east-1`). |
+| `S3_BUCKET_NAME` | Nombre del bucket usado para imágenes y markdown. |
+| `AWS_ACCESS_KEY` / `AWS_SECRET_KEY` | Credenciales con permisos `s3:GetObject`/`PutObject`. |
+| `JWT_SECRET` | Clave HMAC usada por `JwtProvider` (reemplaza la default hardcodeada en prod). |
+| `SERVER_PORT` | Opcional para exponer el backend en otro puerto (ej: 80/443 detrás de Nginx). |
 
-- **POST** `/login`
-  - **Descripción:** Permite a un usuario ingresar al sistema proporcionando sus credenciales. Si el usuario tiene múltiples roles, debe especificar el rol deseado en el cuerpo de la petición.
-  - **Cuerpo de la Petición:** Objeto JSON con `username` (correo electrónico), `password` y opcionalmente `rol`.
-  - **Respuesta:** Objeto JSON conteniendo el `token` de acceso y el `rol` del usuario.
+Consulta `docs/personal/DEPLOYMENT.md` para el detalle de `EnvironmentFile` y el servicio systemd `levelupgamer.service`.
 
-- **POST** `/refresh`
-  - **Descripción:** Renueva el token de acceso actual para extender la sesión del usuario sin necesidad de reingresar credenciales.
-  - **Cuerpo de la Petición:** Objeto JSON con el token de refresco.
-  - **Respuesta:** Nuevo token de acceso.
+## Datos Semilla y Archivos S3
 
-- **POST** `/change-password`
-  - **Descripción:** Permite al usuario autenticado modificar su contraseña de acceso.
-  - **Cuerpo de la Petición:** Objeto JSON con la contraseña actual y la nueva contraseña.
-  - **Respuesta:** Código de estado 200 OK si el cambio fue exitoso.
+- `DataInitializer`, `ProductDataInitializer` y `BlogDataInitializer` crean usuarios, productos e historias de blog cuando la base está vacía (perfiles `!test`).
+- El contenido markdown de ejemplo vive en `s3-files/contenido/*.md`; al subirlo a S3 respeta la misma estructura (`blogs/{n}/blog.md`).
+- Para desarrollo se puede apuntar `aws.s3.bucket.url` a un bucket público o a un mock (ej: LocalStack).
 
-### 2. Gestión de Usuarios
-Controlador: `UsuarioController`
-Ruta base: `/api/users`
+## Validaciones y Reglas de Negocio Clave
 
-Administra la información de los usuarios registrados en la plataforma.
+- RUN chileno sin puntos/guion (7-9 caracteres) y única columna `run`.
+- Dominios permitidos para correo: `gmail.com`, `hotmail.com`, `outlook.com`, `yahoo.com`, `duoc.cl`, `profesor.duoc.cl`.
+- Edad mínima 18 años (`@Adult`).
+- Contraseñas entre 4 y 10 caracteres (pendiente extensión configurable).
+- Descuento 20% para correos `duoc.cl` / `profesor.duoc.cl` al generar pedidos.
+- Stock crítico: log `WARN` cuando `stock <= stockCritico`.
+- Puntos LevelUp: cada producto define `puntosLevelUp` (0-1000, múltiplos de 100) que se multiplican por la cantidad al cerrar el pedido y se acumulan en `Puntos`.
+- Cupones: conversión de 500-3000 puntos a cupones del 5%-30% (saltos de 5), canjeables una sola vez y con tope global del 90% al combinar con el descuento Duoc.
 
-- **POST** `/register`
-  - **Descripción:** Registra un nuevo usuario en la base de datos con el rol predeterminado de CLIENTE.
-  - **Cuerpo de la Petición:** Objeto JSON con `nombre`, `apellido`, `email` y `password`.
-  - **Respuesta:** Datos del usuario creado, excluyendo información sensible.
+## Seguridad y Autorización
 
-- **GET** `/{id}`
-  - **Descripción:** Recupera la información detallada de un usuario específico mediante su identificador único.
-  - **Respuesta:** Objeto JSON con los datos del perfil del usuario y sus puntos acumulados.
-
-- **PUT** `/{id}`
-  - **Descripción:** Actualiza la información personal de un usuario existente.
-  - **Cuerpo de la Petición:** Objeto JSON con los campos a modificar.
-  - **Respuesta:** Datos actualizados del usuario.
-
-- **GET** `/roles`
-  - **Descripción:** Lista los roles disponibles en el sistema (ej. ADMINISTRADOR, CLIENTE).
-  - **Respuesta:** Array JSON con los nombres de los roles.
-
-- **GET** `/` (Requiere Rol: ADMINISTRADOR)
-  - **Descripción:** Obtiene un listado completo de todos los usuarios registrados en el sistema.
-  - **Respuesta:** Lista de objetos JSON de usuarios.
-
-- **POST** `/admin` (Requiere Rol: ADMINISTRADOR)
-  - **Descripción:** Crea un nuevo usuario con privilegios administrativos.
-  - **Cuerpo de la Petición:** Datos del nuevo administrador.
-  - **Respuesta:** Datos del usuario administrador creado.
-
-- **DELETE** `/{id}` (Requiere Rol: ADMINISTRADOR)
-  - **Descripción:** Elimina permanentemente un usuario del sistema.
-  - **Respuesta:** Código de estado 204 No Content si la eliminación fue exitosa.
-
-### 3. Catálogo de Productos
-Controlador: `ProductoController`
-Ruta base: `/api/products`
-
-Gestiona el inventario de productos disponibles para la venta.
-
-- **GET** `/`
-  - **Descripción:** Recupera el listado completo de productos disponibles en el catálogo.
-  - **Respuesta:** Lista de objetos JSON con detalles de cada producto (nombre, precio, stock, imagen).
-
-- **GET** `/{id}`
-  - **Descripción:** Obtiene los detalles específicos de un producto individual.
-  - **Respuesta:** Objeto JSON con la información completa del producto.
-
-- **POST** `/` (Requiere Rol: ADMINISTRADOR)
-  - **Descripción:** Ingresa un nuevo producto al catálogo. Soporta la carga de imágenes mediante `multipart/form-data`.
-  - **Cuerpo de la Petición:** Datos del producto y archivo de imagen.
-  - **Respuesta:** Datos del producto creado.
-
-- **PUT** `/{id}` (Requiere Rol: ADMINISTRADOR)
-  - **Descripción:** Modifica los atributos de un producto existente.
-  - **Cuerpo de la Petición:** Objeto JSON con los datos actualizados.
-  - **Respuesta:** Datos del producto actualizados.
-
-- **DELETE** `/{id}` (Requiere Rol: ADMINISTRADOR)
-  - **Descripción:** Retira un producto del catálogo.
-  - **Respuesta:** Código de estado 204 No Content.
-
-### 4. Carrito de Compras
-Controlador: `CarritoController`
-Ruta base: `/api/cart`
-
-Maneja la selección temporal de productos antes de la compra.
-
-- **GET** `/{userId}`
-  - **Descripción:** Consulta el estado actual del carrito de compras de un usuario.
-  - **Respuesta:** Objeto JSON representando el carrito y sus ítems.
-
-- **POST** `/{userId}/add`
-  - **Descripción:** Agrega una cantidad específica de un producto al carrito del usuario.
-  - **Parámetros de Consulta:** `productId` (ID del producto), `quantity` (cantidad).
-  - **Respuesta:** Estado actualizado del carrito.
-
-- **DELETE** `/{userId}/remove`
-  - **Descripción:** Elimina un producto específico del carrito de compras.
-  - **Parámetros de Consulta:** `productId` (ID del producto a remover).
-  - **Respuesta:** Estado actualizado del carrito.
-
-- **DELETE** `/{userId}`
-  - **Descripción:** Vacía completamente el carrito de compras del usuario.
-  - **Respuesta:** Estado actualizado del carrito (vacío).
-
-### 5. Gestión de Pedidos
-Controlador: `PedidoController`
-Ruta base: `/api/orders`
-
-Procesa la confirmación de compras y el seguimiento de pedidos.
-
-- **POST** `/` (Roles: CLIENTE, ADMINISTRADOR)
-  - **Descripción:** Formaliza la compra generando un pedido a partir de los productos en el carrito.
-  - **Cuerpo de la Petición:** Datos necesarios para el envío y facturación.
-  - **Respuesta:** Confirmación del pedido con su número de seguimiento.
-
-- **GET** `/user/{userId}`
-  - **Descripción:** Lista el historial de pedidos realizados por un usuario.
-  - **Respuesta:** Lista de pedidos con sus respectivos estados y detalles.
-
-- **GET** `/{id}`
-  - **Descripción:** Consulta los detalles de un pedido específico.
-  - **Respuesta:** Información completa del pedido, incluyendo ítems y totales.
-
-### 6. Contenido y Blog
-Controlador: `BlogController`
-Ruta base: `/api/blog-posts`
-
-Gestiona el contenido editorial y noticias de la plataforma.
-
-- **GET** `/`
-  - **Descripción:** Lista las entradas de blog publicadas.
-  - **Respuesta:** Lista de resúmenes de artículos.
-
-- **GET** `/{id}`
-  - **Descripción:** Obtiene los metadatos de una entrada de blog específica.
-  - **Respuesta:** Detalles del artículo.
-
-- **GET** `/{id}/content`
-  - **Descripción:** Recupera el contenido completo (texto/markdown) de un artículo.
-  - **Respuesta:** Texto plano o markdown del contenido.
-
-- **POST** `/` (Requiere Rol: ADMINISTRADOR)
-  - **Descripción:** Publica una nueva entrada en el blog.
-  - **Cuerpo de la Petición:** Datos del artículo e imagen opcional.
-  - **Respuesta:** Artículo creado.
-
-- **PUT** `/{id}` (Requiere Rol: ADMINISTRADOR)
-  - **Descripción:** Edita una entrada de blog existente.
-  - **Cuerpo de la Petición:** Datos actualizados.
-  - **Respuesta:** Artículo actualizado.
-
-- **DELETE** `/{id}` (Requiere Rol: ADMINISTRADOR)
-  - **Descripción:** Elimina una entrada del blog.
-  - **Respuesta:** Código de estado 204 No Content.
-
-### 7. Reseñas y Comentarios
-Controlador: `ResenaController`
-Ruta base: `/api`
-
-Permite la interacción de los usuarios mediante valoraciones de productos.
-
-- **POST** `/reviews` (Roles: CLIENTE, ADMINISTRADOR)
-  - **Descripción:** Registra una nueva reseña y calificación para un producto.
-  - **Cuerpo de la Petición:** ID del producto, texto de la reseña y calificación numérica.
-  - **Respuesta:** Datos de la reseña creada.
-
-- **GET** `/products/{productId}/reviews`
-  - **Descripción:** Lista todas las reseñas asociadas a un producto.
-  - **Respuesta:** Lista de reseñas con comentarios y calificaciones.
-
-### 8. Gamificación y Puntos
-Controlador: `PuntosController`
-Ruta base: `/api/points`
-
-Administra el sistema de recompensas y fidelización.
-
-- **GET** `/{userId}`
-  - **Descripción:** Consulta el saldo de puntos acumulados por un usuario.
-  - **Respuesta:** Objeto JSON con el total de puntos.
-
-- **POST** `/earn` (Roles: CLIENTE, ADMINISTRADOR)
-  - **Descripción:** Asigna puntos a un usuario (generalmente por compras o acciones específicas).
-  - **Cuerpo de la Petición:** Cantidad de puntos a sumar.
-  - **Respuesta:** Saldo actualizado.
-
-- **POST** `/redeem` (Roles: CLIENTE, ADMINISTRADOR)
-  - **Descripción:** Procesa el canje de puntos por recompensas o descuentos.
-  - **Cuerpo de la Petición:** Cantidad de puntos a canjear.
-  - **Respuesta:** Saldo actualizado post-canje.
-
-### 9. Contacto
-Controlador: `ContactoController`
-Ruta base: `/api/contact-messages`
-
-- **POST** `/`
-  - **Descripción:** Recibe y almacena mensajes enviados a través del formulario de contacto.
-  - **Cuerpo de la Petición:** Nombre, correo y mensaje del usuario.
-  - **Respuesta:** Confirmación de recepción.
-
-### 10. Monitoreo (Health Check)
-Controlador: `HealthCheckController`
-Ruta base: `/`
-
-- **GET** `/`
-  - **Descripción:** Endpoint de diagnóstico para verificar que el servicio backend se encuentra operativo.
-  - **Respuesta:** Mensaje de estado "OK".
+- Filtro `JwtAutenticacionFilter` agrega `SecurityContext` a partir del header `Authorization: Bearer <token>`.
+- `SecurityConfig` habilita CORS global (`*`) y define accesos:
+  - Público: `/`, `/api/auth/login`, `/api/auth/refresh`, `/api/users/register`, `/api/blog-posts/**`, `/api/contact-messages`, `/swagger-ui/**`, `/v3/api-docs/**`.
+  - Requiere autenticación: `/api/users/{id}`, `/api/products/**`, `/api/orders/**`, `/api/points/**`, `/api/cart/**`, `/api/reviews/**`.
+  - Solo admins: `/api/users`, `/api/users/roles`, `/api/users/admin`, mutaciones de productos y blogs.
+- Errores se devuelven como `{ "error": "mensaje" }` o mapas campo -> error en validaciones.
 
 ## Pruebas
 
-El proyecto incluye un conjunto de pruebas para garantizar la calidad y el correcto funcionamiento del código.
+- **Unitarias y de servicio**: ubicadas por dominio (`src/test/java/com/levelupgamer/{dominio}`) con Mockito y H2.
+- **E2E / integración**: `AutenticacionE2ETest`, `UsuarioE2ETest`, `ProductoE2ETest`, `PedidoE2ETest`, `CarritoE2ETest`, `ContenidoE2ETest`, `GamificacionE2ETest` ejecutan escenarios completos usando el perfil `test`.
+- Ejecuta todo con `./mvnw verify` o `./mvnw test -Ptest`.
 
-### Pruebas Unitarias
-- **Ubicación:** `src/test/java`
-- **Descripción:** Se centran en probar unidades de código aisladas (ej: métodos de un servicio, mappers). Utilizan mocks (Mockito) para simular dependencias y asegurar que el componente bajo prueba funciona como se espera sin depender de otros sistemas como la base de datos.
-- **Ejecución:** Se ejecutan automáticamente con el comando `mvn clean install` o `mvn test`.
+## Documentación y Utilidades
 
-### Pruebas de Integración / E2E
-- **Descripción:** Estas pruebas validan flujos completos de la aplicación, desde el endpoint de la API hasta la base de datos. Se utilizan para verificar que los diferentes módulos interactúan correctamente. Se configuran con la anotación `@SpringBootTest` y utilizan la base de datos en memoria H2 para no interferir con los datos de desarrollo o producción.
-- **Ejemplo:** Probar que al llamar a `POST /api/cart/{userId}/add`, el producto se añade correctamente a la base de datos y la respuesta de la API es la esperada.
-- **Ubicación de Pruebas E2E:**
-  - `AutenticacionE2ETest.java`
-  - `UsuarioE2ETest.java`
-  - `ProductoE2ETest.java`
-  - `PedidoE2ETest.java`
-  - `CarritoE2ETest.java`
-  - `ContenidoE2ETest.java`
-  - `GamificacionE2ETest.java`
+- **Referencia REST detallada**: `docs/personal/api-endpoints.md` (métodos, roles, payloads, códigos de respuesta y cabeceras).
+- **Guía rápida Spring Boot CLI**: `docs/personal/SpringBoot CLI.md`.
+- **Este README**: arquitectura, perfiles y reglas de negocio siempre actualizadas.
+- **Swagger/OpenAPI**: `http://localhost:8081/swagger-ui/index.html` (o el puerto configurado).
+- **Actuator**: `GET /actuator/health` y métricas estándar.
 
-## Configuración y Despliegue
+## Ejecución Rápida en Desarrollo
 
-La aplicación utiliza perfiles de Spring Boot para gestionar diferentes configuraciones de entorno.
+1. Configura (opcional) `aws.s3.bucket.name`, `aws.region`, `aws.accessKey`, `aws.secretKey` en `application-dev.properties` o variables de entorno.
+2. Ejecuta `./mvnw spring-boot:run` (perfil `dev` activado por defecto).
+3. Usa las credenciales sembradas (por ejemplo `admin@gmail.com / admin123`).
+4. Abre Swagger para probar los endpoints o consulta la guía en `docs/personal/API Endpoints.md`.
 
-- **`application-dev.properties` (Perfil `dev`):** Configuración por defecto para desarrollo local. Utiliza una base de datos en memoria H2, lo que permite ejecutar la aplicación sin necesidad de configurar una base de datos externa.
+## Despliegue
+
+- Provisiona PostgreSQL administrado (RDS/CloudSQL) y crea la base `levelupgamer` con usuario dedicado. Expone la cadena vía `DB_URL`, `DB_USER`, `DB_PASS`.
+- Configura en el servidor un archivo `/etc/levelupgamer.env` (o variables del sistema) con las claves descritas en la sección **Variables de Entorno (Producción)**.
+- Empaqueta con `./mvnw clean package -DskipTests` y copia `target/levelupgamer-backend-*.jar` junto al unit file `src/main/resources/levelupgamer.service`.
+- Actualiza el unit file apuntando al path real del JAR y al archivo de variables, cópialo a `/etc/systemd/system/`, ejecuta `systemctl daemon-reload` y luego `systemctl enable --now levelupgamer`.
+- `journalctl -u levelupgamer -f` permite auditar logs en tiempo real.
+- El flujo `.github/workflows/despliegue-ec2.yml` automatiza build + copia del artefacto + reinicio del servicio `levelupgamer.service` en la instancia.
+
 - **`application-prod.properties` (Perfil `prod`):** Configuración para el entorno de producción. Utiliza variables de entorno para datos sensibles.
 
 ### Variables de Entorno (Producción)
@@ -305,10 +134,11 @@ Para desplegar en producción, es necesario configurar las siguientes variables 
 El repositorio está configurado con un flujo de trabajo de GitHub Actions (`.github/workflows/despliegue-ec2.yml`) que automatiza el despliegue en una instancia EC2 de AWS.
 
 El flujo de trabajo realiza los siguientes pasos:
-1.  Se activa al hacer un `push` a la rama `main`.
-2.  Construye el proyecto y ejecuta las pruebas.
-3.  Copia el archivo JAR resultante a la instancia EC2.
-4.  Copia el archivo de servicio `levelupgamer.service` a `/etc/systemd/system/` en el servidor.
-5.  Recarga `systemd`, reinicia el servicio de la aplicación y verifica su estado.
+
+1. Se activa al hacer un `push` a la rama `main`.
+2. Construye el proyecto y ejecuta las pruebas.
+3. Copia el archivo JAR resultante a la instancia EC2.
+4. Copia el archivo de servicio `levelupgamer.service` a `/etc/systemd/system/` en el servidor.
+5. Recarga `systemd`, reinicia el servicio de la aplicación y verifica su estado.
 
 El archivo `levelupgamer.service` define cómo el sistema operativo debe gestionar el proceso de la aplicación, asegurando que se reinicie si falla.

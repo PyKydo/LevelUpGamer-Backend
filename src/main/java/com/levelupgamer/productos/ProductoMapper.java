@@ -13,6 +13,7 @@ public class ProductoMapper {
         dto.setStock(p.getStock());
         dto.setStockCritico(p.getStockCritico());
         dto.setCategoria(p.getCategoria() != null ? p.getCategoria().name() : null);
+        dto.setPuntosLevelUp(p.getPuntosLevelUp());
         dto.setImagenes(p.getImagenes());
         dto.setActivo(p.getActivo());
         return dto;

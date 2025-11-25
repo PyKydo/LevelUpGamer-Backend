@@ -21,6 +21,7 @@ public class ProductoDTO {
     private Integer stock;
     private Integer stockCritico;
     private String categoria;
+    private Integer puntosLevelUp;
     private List<String> imagenes;
     private Boolean activo;
 }

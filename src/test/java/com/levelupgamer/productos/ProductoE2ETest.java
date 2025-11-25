@@ -57,13 +57,13 @@ class ProductoE2ETest {
 
         @BeforeEach
         void setUp() throws Exception {
-                // Crear el usuario admin con datos únicos
+                
                 String uniqueId = UUID.randomUUID().toString().substring(0, 8);
                 Usuario admin = Usuario.builder()
-                                .run("11111111-1") // RUN de prueba válido (no se valida formato aquí)
+                                .run("11111111-1") 
                                 .nombre("Admin")
                                 .apellidos("Test")
-                                .correo("admin-" + uniqueId + "@example.com") // Correo único
+                                .correo("admin-" + uniqueId + "@example.com") 
                                 .contrasena(passwordEncoder.encode("admin123"))
                                 .fechaNacimiento(LocalDate.now().minusYears(30))
                                 .roles(Set.of(RolUsuario.ADMINISTRADOR))
@@ -71,7 +71,7 @@ class ProductoE2ETest {
                                 .build();
                 usuarioRepository.save(admin);
 
-                // Iniciar sesión como admin para obtener un token válido
+                
                 LoginRequest loginRequest = LoginRequest.builder()
                                 .correo(admin.getCorreo())
                                 .contrasena("admin123")
@@ -90,7 +90,7 @@ class ProductoE2ETest {
 
         @Test
         void deberiaCrearYListarProductos() throws Exception {
-                // --- 1. Probar la Creación de un Producto ---
+                
                 Producto newProduct = Producto.builder()
                                 .codigo("E2E-001")
                                 .nombre("Producto de Prueba E2E")
@@ -102,7 +102,7 @@ class ProductoE2ETest {
                                 .imagenes(Collections.singletonList("http://example.com/image.jpg"))
                                 .build();
 
-                // Construir petición multipart con las partes requeridas por el controlador
+                
                 MockMultipartFile productoPart = new MockMultipartFile(
                                 "producto",
                                 "producto.json",
@@ -122,7 +122,7 @@ class ProductoE2ETest {
                                 .andExpect(status().isOk())
                                 .andExpect(jsonPath("$.codigo").value("E2E-001"));
 
-                // --- 2. Probar el Listado de Productos ---
+                
                 mockMvc.perform(get("/api/products")
                                 .header("Authorization", "Bearer " + adminToken))
                                 .andExpect(status().isOk())

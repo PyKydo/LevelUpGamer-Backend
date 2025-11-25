@@ -9,6 +9,7 @@ import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import com.levelupgamer.usuarios.Usuario;
+import com.levelupgamer.gamificacion.cupones.Cupon;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.NoArgsConstructor;
@@ -38,6 +39,17 @@ public class Pedido {
     @NotNull
     @DecimalMin("0.0")
     private BigDecimal total;
+
+    @NotNull
+    @DecimalMin("0.0")
+    private BigDecimal totalAntesDescuentos;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "cupon_id")
+    private Cupon cupon;
+
+    private Integer descuentoCuponAplicado;
+    private Integer descuentoDuocAplicado;
 
     @NotNull
     private LocalDateTime fecha;

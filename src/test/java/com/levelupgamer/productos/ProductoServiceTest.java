@@ -63,7 +63,7 @@ class ProductoServiceTest {
 
     @Test
     void crearProducto_conCodigoNuevo_guardaYRetornaProductoDTO() throws IOException {
-        // Given
+        
         MockMultipartFile mockImage = new MockMultipartFile("imagen", "test.jpg", "image/jpeg", "test-image".getBytes());
         String imageUrl = "http://s3.test.url/test.jpg";
 
@@ -71,10 +71,10 @@ class ProductoServiceTest {
         when(s3Service.uploadFile(any(), any(), anyLong())).thenReturn(imageUrl);
         when(productoRepository.save(any(Producto.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        // When
+        
         ProductoDTO result = productoService.crearProducto(producto, mockImage);
 
-        // Then
+        
         assertNotNull(result);
         assertEquals(imageUrl, result.getImagenes().get(0));
         verify(productoRepository, times(1)).save(any(Producto.class));
@@ -82,11 +82,11 @@ class ProductoServiceTest {
 
     @Test
     void crearProducto_conCodigoExistente_lanzaExcepcion() throws IOException {
-        // Given
+        
         MockMultipartFile mockImage = new MockMultipartFile("imagen", "test.jpg", "image/jpeg", "test-image".getBytes());
         when(productoRepository.existsByCodigo("P001")).thenReturn(true);
 
-        // When & Then
+        
         assertThrows(IllegalArgumentException.class, () -> productoService.crearProducto(producto, mockImage));
         verify(s3Service, never()).uploadFile(any(), any(), anyLong());
         verify(productoRepository, never()).save(any(Producto.class));
@@ -101,16 +101,16 @@ class ProductoServiceTest {
 
     @Test
     void actualizarProducto_productoExistente_actualizaYRetornaOptionalConProducto() {
-        // Given
+        
         Producto productoActualizado = new Producto();
         productoActualizado.setNombre("Producto Actualizado");
         when(productoRepository.findById(1L)).thenReturn(Optional.of(producto));
         when(productoRepository.save(any(Producto.class))).thenReturn(producto);
 
-        // When
+        
         Optional<Producto> result = productoService.actualizarProducto(1L, productoActualizado);
 
-        // Then
+        
         assertTrue(result.isPresent());
         assertEquals("Producto Actualizado", result.get().getNombre());
         verify(productoRepository, times(1)).save(producto);

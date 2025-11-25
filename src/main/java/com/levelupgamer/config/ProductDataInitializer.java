@@ -36,7 +36,8 @@ public class ProductDataInitializer implements CommandLineRunner {
         }
     }
 
-    private void createProducts() {
+        @SuppressWarnings("null")
+        private void createProducts() {
         // JM001 - Catan
         Producto jm001 = Producto.builder()
                 .codigo("JM001")
@@ -46,6 +47,7 @@ public class ProductDataInitializer implements CommandLineRunner {
                 .stock(15)
                 .stockCritico(5)
                 .categoria(CategoriaProducto.JUEGOS_DE_MESA)
+                .puntosLevelUp(200)
                 .imagenes(Collections.singletonList(s3BucketUrl + "/products/JM001-catan.webp"))
                 .activo(true)
                 .build();
@@ -60,6 +62,7 @@ public class ProductDataInitializer implements CommandLineRunner {
                 .stock(12)
                 .stockCritico(4)
                 .categoria(CategoriaProducto.JUEGOS_DE_MESA)
+                .puntosLevelUp(200)
                 .imagenes(Collections.singletonList(s3BucketUrl + "/products/JM002-carcassonne.webp"))
                 .activo(true)
                 .build();
@@ -74,6 +77,7 @@ public class ProductDataInitializer implements CommandLineRunner {
                 .stock(8)
                 .stockCritico(3)
                 .categoria(CategoriaProducto.ACCESORIOS)
+                .puntosLevelUp(300)
                 .imagenes(Collections.singletonList(s3BucketUrl + "/products/AC001-xbox-controller.webp"))
                 .activo(true)
                 .build();
@@ -88,6 +92,7 @@ public class ProductDataInitializer implements CommandLineRunner {
             .stock(6)
             .stockCritico(2)
             .categoria(CategoriaProducto.ACCESORIOS)
+            .puntosLevelUp(400)
             .imagenes(Collections.singletonList(s3BucketUrl + "/products/AC002-hyperx-cloud.webp"))
             .activo(true)
             .build();
@@ -102,6 +107,7 @@ public class ProductDataInitializer implements CommandLineRunner {
                 .stock(3)
                 .stockCritico(1)
                 .categoria(CategoriaProducto.CONSOLAS)
+                .puntosLevelUp(800)
                 .imagenes(Collections.singletonList(s3BucketUrl + "/products/CQ001-ps5.webp"))
                 .activo(true)
                 .build();
@@ -116,6 +122,7 @@ public class ProductDataInitializer implements CommandLineRunner {
                 .stock(2)
                 .stockCritico(1)
                 .categoria(CategoriaProducto.COMPUTADORES_GAMERS)
+                .puntosLevelUp(1000)
                 .imagenes(Collections.singletonList(s3BucketUrl + "/products/CG001-asus-rog.webp"))
                 .activo(true)
                 .build();
@@ -130,6 +137,7 @@ public class ProductDataInitializer implements CommandLineRunner {
                 .stock(4)
                 .stockCritico(1)
                 .categoria(CategoriaProducto.SILLAS_GAMERS)
+                .puntosLevelUp(300)
                 .imagenes(Collections.singletonList(s3BucketUrl + "/products/SG001-secretlab-titan.webp"))
                 .activo(true)
                 .build();
@@ -144,6 +152,7 @@ public class ProductDataInitializer implements CommandLineRunner {
                 .stock(10)
                 .stockCritico(3)
                 .categoria(CategoriaProducto.MOUSE)
+                .puntosLevelUp(200)
                 .imagenes(Collections.singletonList(s3BucketUrl + "/products/MS001-logitech-g502.webp"))
                 .activo(true)
                 .build();
@@ -158,6 +167,7 @@ public class ProductDataInitializer implements CommandLineRunner {
                 .stock(15)
                 .stockCritico(5)
                 .categoria(CategoriaProducto.MOUSEPAD)
+                .puntosLevelUp(100)
                 .imagenes(Collections.singletonList(s3BucketUrl + "/products/MP001-razer-goliathus.webp"))
                 .activo(true)
                 .build();
@@ -172,6 +182,7 @@ public class ProductDataInitializer implements CommandLineRunner {
                 .stock(20)
                 .stockCritico(8)
                 .categoria(CategoriaProducto.POLERAS_PERSONALIZADAS)
+                .puntosLevelUp(100)
                 .imagenes(Collections.singletonList(s3BucketUrl + "/products/PP001-levelup-tshirt.webp"))
                 .activo(true)
                 .build();

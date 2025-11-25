@@ -27,7 +27,7 @@ public class ContactoService {
                 .build();
         contacto = contactoRepository.save(contacto);
 
-        // La funcionalidad de envío de correo está desactivada.
+        
         logger.info("Mensaje de contacto guardado de [{}]. El envío de correo de confirmación está desactivado.", dto.getCorreo());
 
         return ContactoDTO.builder()

@@ -44,7 +44,7 @@ public class BlogService {
             blog.setDescripcionCorta(nuevo.getDescripcionCorta());
             blog.setContenidoUrl(nuevo.getContenidoUrl());
             blog.setAltImagen(nuevo.getAltImagen());
-            // Imagen se actualiza por separado o si se implementa lógica específica
+            
             blogRepository.save(blog);
             return blog;
         });

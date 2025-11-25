@@ -8,6 +8,7 @@ import java.util.List;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+import com.levelupgamer.validation.StepValue;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.NoArgsConstructor;
@@ -55,6 +56,14 @@ public class Producto {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 50)
     private CategoriaProducto categoria;
+
+    @Column(nullable = false)
+    @NotNull
+    @Min(0)
+    @Max(1000)
+    @StepValue(step = 100, min = 0, max = 1000)
+    @Builder.Default
+    private Integer puntosLevelUp = 0;
 
     @ElementCollection(fetch = FetchType.LAZY)
     @CollectionTable(name = "producto_imagenes", joinColumns = @JoinColumn(name = "producto_id"))

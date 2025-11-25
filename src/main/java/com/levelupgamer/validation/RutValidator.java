@@ -8,7 +8,7 @@ public class RutValidator implements ConstraintValidator<Rut, String> {
     @Override
     public boolean isValid(String rut, ConstraintValidatorContext context) {
         if (rut == null || rut.isEmpty()) {
-            return true; // NotBlank se encarga de la obligatoriedad
+            return true; 
         }
 
         try {

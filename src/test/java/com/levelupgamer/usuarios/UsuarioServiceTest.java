@@ -77,7 +77,7 @@ class UsuarioServiceTest {
         when(passwordEncoder.encode(validDto.getContrasena())).thenReturn("hashed");
         when(usuarioRepository.save(any(Usuario.class))).thenAnswer(inv -> {
             Usuario u = inv.getArgument(0);
-            u.setId(1L); // Simular que se le asigna un ID al guardar
+            u.setId(1L); 
             return u;
         });
         when(puntosRepository.save(any(Puntos.class))).thenAnswer(inv -> inv.getArgument(0));
@@ -117,7 +117,7 @@ class UsuarioServiceTest {
 
     @Test
     void actualizarUsuario_usuarioExistente_actualizaYRetornaDTO() {
-        // Given
+        
         UsuarioUpdateDTO updateDto = UsuarioUpdateDTO.builder()
                 .nombre("Juan Actualizado")
                 .apellidos("Perez Actualizado")
@@ -127,10 +127,10 @@ class UsuarioServiceTest {
         when(usuarioRepository.save(any(Usuario.class))).thenReturn(usuario);
         when(puntosService.obtenerPuntosPorUsuario(1L)).thenReturn(new PuntosDTO(1L, 100));
 
-        // When
+        
         UsuarioRespuestaDTO result = usuarioService.actualizarUsuario(1L, updateDto);
 
-        // Then
+        
         assertThat(result).isNotNull();
         ArgumentCaptor<Usuario> captor = ArgumentCaptor.forClass(Usuario.class);
         verify(usuarioRepository).save(captor.capture());
@@ -140,11 +140,11 @@ class UsuarioServiceTest {
 
     @Test
     void actualizarUsuario_usuarioNoExistente_lanzaExcepcion() {
-        // Given
+        
         UsuarioUpdateDTO updateDto = new UsuarioUpdateDTO();
         when(usuarioRepository.findById(1L)).thenReturn(Optional.empty());
 
-        // When & Then
+        
         assertThrows(IllegalArgumentException.class, () -> usuarioService.actualizarUsuario(1L, updateDto));
         verify(usuarioRepository, never()).save(any());
     }

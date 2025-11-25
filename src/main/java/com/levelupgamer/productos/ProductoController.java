@@ -23,6 +23,11 @@ public class ProductoController {
         return ResponseEntity.ok(productoService.listarProductos());
     }
 
+    @GetMapping("/featured")
+    public ResponseEntity<List<ProductoDTO>> listarDestacados() {
+        return ResponseEntity.ok(productoService.listarDestacados());
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<ProductoDTO> getProducto(@PathVariable Long id) {
         return productoService.buscarPorId(id)

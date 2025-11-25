@@ -38,7 +38,7 @@ public class Contacto {
     @NotNull
     private LocalDateTime fecha;
 
-    // Auditoría
+    
     @CreatedDate
     @Column(updatable = false)
     private LocalDateTime createdAt;
@@ -46,5 +46,5 @@ public class Contacto {
     @LastModifiedDate
     private LocalDateTime updatedAt;
 
-    // Getters y setters omitidos por brevedad
+    
 }

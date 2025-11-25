@@ -62,13 +62,13 @@ class PedidoE2ETest {
         @BeforeEach
         @Transactional
         void setUp() throws Exception {
-                // Crear el usuario cliente con datos únicos
+                
                 String uniqueId = UUID.randomUUID().toString().substring(0, 8);
                 Usuario cliente = Usuario.builder()
-                                .run("99" + uniqueId) // RUN único
+                                .run("99" + uniqueId) 
                                 .nombre("Cliente")
                                 .apellidos("Test")
-                                .correo("cliente-" + uniqueId + "@gmail.com") // Correo único
+                                .correo("cliente-" + uniqueId + "@gmail.com") 
                                 .contrasena(passwordEncoder.encode("cliente"))
                                 .fechaNacimiento(LocalDate.now().minusYears(20))
                                 .roles(Set.of(RolUsuario.CLIENTE))
@@ -77,7 +77,7 @@ class PedidoE2ETest {
                 usuarioRepository.saveAndFlush(cliente);
                 clienteId = cliente.getId();
 
-                // Iniciar sesión como cliente
+                
                 LoginRequest loginRequest = LoginRequest.builder()
                                 .correo(cliente.getCorreo())
                                 .contrasena("cliente")
@@ -90,7 +90,7 @@ class PedidoE2ETest {
                 JsonNode root = objectMapper.readTree(result.getResponse().getContentAsString());
                 clienteToken = root.get("accessToken").asText();
 
-                // Crear un producto para la prueba
+                
                 producto = Producto.builder()
                                 .codigo("E2E-PEDIDO-001")
                                 .nombre("Producto para Pedido")
@@ -104,7 +104,7 @@ class PedidoE2ETest {
 
         @Test
         void deberiaCrearUnPedidoYReducirElStockDelProducto() throws Exception {
-                // --- 1. Crear el Pedido ---
+                
                 PedidoItemCrearDTO itemDTO = new PedidoItemCrearDTO();
                 itemDTO.setProductoId(producto.getId());
                 itemDTO.setCantidad(2);
@@ -120,7 +120,7 @@ class PedidoE2ETest {
                                 .andExpect(status().isOk())
                                 .andExpect(jsonPath("$.total").value(200.00));
 
-                // --- 2. Verificar que el stock del producto se ha reducido ---
+                
                 Producto productoActualizado = productoRepository.findById(producto.getId()).orElseThrow();
                 assertEquals(18, productoActualizado.getStock());
         }

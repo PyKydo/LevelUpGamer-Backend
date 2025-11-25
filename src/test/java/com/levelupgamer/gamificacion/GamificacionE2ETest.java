@@ -52,7 +52,7 @@ class GamificacionE2ETest {
         @BeforeEach
         @Transactional
         void setUp() throws Exception {
-                // Crear el usuario cliente para la prueba
+                
                 String uniqueId = UUID.randomUUID().toString().substring(0, 8);
                 Usuario cliente = Usuario.builder()
                                 .run("44" + uniqueId)
@@ -67,7 +67,7 @@ class GamificacionE2ETest {
                 usuarioRepository.saveAndFlush(cliente);
                 clienteId = cliente.getId();
 
-                // Iniciar sesión como cliente
+                
                 LoginRequest loginRequest = LoginRequest.builder()
                                 .correo(cliente.getCorreo())
                                 .contrasena("gami123")
@@ -83,13 +83,13 @@ class GamificacionE2ETest {
 
         @Test
         void deberiaObtenerYModificarPuntosDeUsuario() throws Exception {
-                // 1. Obtener puntos iniciales (deberían ser 0)
+                
                 mockMvc.perform(get("/api/points/" + clienteId)
                                 .header("Authorization", "Bearer " + clienteToken))
                                 .andExpect(status().isOk())
                                 .andExpect(jsonPath("$.puntosAcumulados").value(0));
 
-                // 2. Sumar puntos
+                
                 PuntosDTO earnPointsDTO = new PuntosDTO(clienteId, 100);
                 mockMvc.perform(post("/api/points/earn")
                                 .header("Authorization", "Bearer " + clienteToken)
@@ -98,7 +98,7 @@ class GamificacionE2ETest {
                                 .andExpect(status().isOk())
                                 .andExpect(jsonPath("$.puntosAcumulados").value(100));
 
-                // 3. Canjear puntos
+                
                 PuntosDTO redeemPointsDTO = new PuntosDTO(clienteId, 30);
                 mockMvc.perform(post("/api/points/redeem")
                                 .header("Authorization", "Bearer " + clienteToken)

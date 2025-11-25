@@ -47,7 +47,7 @@ public class BlogController {
             return ResponseEntity.notFound().build();
         }
 
-        // Si la URL corresponde al bucket S3 configurado, obtener directamente desde S3
+        
         try {
             String bucket = s3Service.getBucketName();
             String key = null;
@@ -56,15 +56,15 @@ public class BlogController {
             String path = uri.getPath();
 
             if (host != null && host.contains(bucket)) {
-                // formato: <bucket>.s3.amazonaws.com/<key>
+                
                 if (path != null && path.startsWith("/")) {
                     key = path.substring(1);
                 } else {
                     key = path;
                 }
             } else if (host != null && host.contains("s3.amazonaws.com")) {
-                // formato: s3.amazonaws.com/<bucket>/<key>
-                // path = /<bucket>/<key>
+                
+                
                 if (path != null && path.startsWith("/")) {
                     String p = path.substring(1);
                     if (p.startsWith(bucket + "/")) {
@@ -80,10 +80,10 @@ public class BlogController {
                 return new ResponseEntity<>(content, headers, HttpStatus.OK);
             }
         } catch (Exception ignored) {
-            // Si falla leer desde S3, intentaremos vía HTTP externo
+            
         }
 
-        // Si no es S3 o falla, caer a RestTemplate para URL pública
+        
         try {
             ResponseEntity<String> resp = restTemplate.getForEntity(url, String.class);
             if (resp.getStatusCode().is2xxSuccessful()) {

@@ -18,4 +18,6 @@ public class PedidoCrearDTO {
     private Long usuarioId;
     @NotNull
     private List<PedidoItemCrearDTO> items;
+    private Long cuponId;
+    private String codigoCupon;
 }

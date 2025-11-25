@@ -61,12 +61,12 @@ class CarritoE2ETest {
         @BeforeEach
         @Transactional
         void setUp() throws Exception {
-                // Limpiar repositorios para asegurar un estado limpio en cada test
+                
                 carritoRepository.deleteAll();
                 usuarioRepository.deleteAll();
                 productoRepository.deleteAll();
 
-                // Crear usuario CLIENTE con datos únicos
+                
                 String uniqueId = UUID.randomUUID().toString().substring(0, 8);
                 usuario = Usuario.builder()
                                 .run("77" + uniqueId)
@@ -80,7 +80,7 @@ class CarritoE2ETest {
                                 .build();
                 usuarioRepository.saveAndFlush(usuario);
 
-                // Iniciar sesión para obtener token JWT
+                
                 LoginRequest loginRequest = LoginRequest.builder()
                                 .correo(usuario.getCorreo())
                                 .contrasena("cliente")
@@ -93,13 +93,13 @@ class CarritoE2ETest {
                 JsonNode root = objectMapper.readTree(result.getResponse().getContentAsString());
                 clienteToken = root.get("accessToken").asText();
 
-                // Crear producto de prueba
+                
                 producto = new Producto();
                 producto.setNombre("Test Product");
                 producto.setPrecio(new java.math.BigDecimal("99.99"));
                 producto.setStock(100);
                 producto.setCodigo("P123");
-                // Campo obligatorio en la entidad Producto (no admite NULL)
+                
                 producto.setCategoria(com.levelupgamer.productos.CategoriaProducto.ACCESORIOS);
                 producto = productoRepository.saveAndFlush(producto);
         }
@@ -125,18 +125,18 @@ class CarritoE2ETest {
                                 .andExpect(jsonPath("$.items", hasSize(1)))
                                 .andExpect(jsonPath("$.items[0].productId", is(producto.getId().intValue())))
                                 .andExpect(jsonPath("$.items[0].quantity", is(2)))
-                                .andExpect(jsonPath("$.total", is(199.98))); // 2 * 99.99
+                                .andExpect(jsonPath("$.total", is(199.98))); 
         }
 
         @Test
         void removeProductFromCart_debeQuitarProductoYRetornarCarritoActualizado() throws Exception {
-                // Primero, agregar un producto al carrito
+                
                 mockMvc.perform(post("/api/cart/{userId}/add", usuario.getId())
                                 .header("Authorization", "Bearer " + clienteToken)
                                 .param("productId", producto.getId().toString())
                                 .param("quantity", "1"));
 
-                // Luego, eliminarlo
+                
                 mockMvc.perform(delete("/api/cart/{userId}/remove", usuario.getId())
                                 .header("Authorization", "Bearer " + clienteToken)
                                 .param("productId", producto.getId().toString()))
@@ -147,13 +147,13 @@ class CarritoE2ETest {
 
         @Test
         void clearCart_debeVaciarElCarrito() throws Exception {
-                // Primero, agregar un producto al carrito
+                
                 mockMvc.perform(post("/api/cart/{userId}/add", usuario.getId())
                                 .header("Authorization", "Bearer " + clienteToken)
                                 .param("productId", producto.getId().toString())
                                 .param("quantity", "3"));
 
-                // Luego, vaciar el carrito
+                
                 mockMvc.perform(delete("/api/cart/{userId}", usuario.getId())
                                 .header("Authorization", "Bearer " + clienteToken))
                                 .andExpect(status().isOk())

@@ -18,7 +18,7 @@ public class AllowedEmailDomainValidator implements ConstraintValidator<AllowedE
     @Override
     public boolean isValid(String email, ConstraintValidatorContext context) {
         if (email == null) {
-            return true; // O false, si el correo es obligatorio
+            return true; 
         }
         String lowerCaseEmail = email.toLowerCase();
         return Arrays.stream(allowedDomains).anyMatch(lowerCaseEmail::endsWith);

@@ -18,6 +18,11 @@ public class PedidoRespuestaDTO {
     private Long usuarioId;
     private List<PedidoItemRespuestaDTO> items;
     private BigDecimal total;
+    private BigDecimal totalAntesDescuentos;
+    private Integer descuentoCupon;
+    private Integer descuentoDuoc;
+    private Long cuponId;
+    private String cuponCodigo;
     private LocalDateTime fecha;
     private String estado;
     // Getters y setters

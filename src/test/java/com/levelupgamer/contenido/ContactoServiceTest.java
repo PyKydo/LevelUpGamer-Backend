@@ -46,13 +46,13 @@ class ContactoServiceTest {
 
     @Test
     void guardarMensaje_debeGuardarMensaje() {
-        // Given
+        
         when(contactoRepository.save(any(Contacto.class))).thenReturn(contacto);
 
-        // When
+        
         ContactoDTO result = contactoService.guardarMensaje(contactoDTO);
 
-        // Then
+        
         assertNotNull(result);
         assertEquals(contacto.getId(), result.getId());
         assertEquals(contactoDTO.getNombre(), result.getNombre());

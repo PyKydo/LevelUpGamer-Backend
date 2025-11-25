@@ -33,9 +33,9 @@ class AutenticacionE2ETest {
 
     @Test
     void deberiaRegistrarUsuarioYLuegoHacerLogin() throws Exception {
-        // --- 1. Probar el Registro ---
+        
         UsuarioRegistroDTO newUser = UsuarioRegistroDTO.builder()
-                .run("11111111-1") // RUT de prueba válido
+                .run("11111111-1") 
                 .nombre("E2E")
                 .apellidos("Tester")
                 .correo("e2e.tester@gmail.com")
@@ -52,7 +52,7 @@ class AutenticacionE2ETest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.correo").value("e2e.tester@gmail.com"));
 
-        // --- 2. Probar el Login con el usuario recién creado ---
+        
         LoginRequest loginRequest = new LoginRequest();
         loginRequest.setCorreo("e2e.tester@gmail.com");
         loginRequest.setContrasena("pass12345");
@@ -67,7 +67,7 @@ class AutenticacionE2ETest {
 
     @Test
     void deberiaPermitirCambiarContrasenaConTokenValido() throws Exception {
-        // Registrar usuario
+        
         UsuarioRegistroDTO newUser = UsuarioRegistroDTO.builder()
                 .run("11111111-1")
                 .nombre("Cambio")
@@ -85,7 +85,7 @@ class AutenticacionE2ETest {
                         .content(objectMapper.writeValueAsString(newUser)))
                 .andExpect(status().isOk());
 
-        // Login para obtener el accessToken
+        
         LoginRequest loginRequest = new LoginRequest();
         loginRequest.setCorreo("change.pass@gmail.com");
         loginRequest.setContrasena("pass1234");
@@ -100,7 +100,7 @@ class AutenticacionE2ETest {
         JsonNode loginJson = objectMapper.readTree(loginResponseBody);
         String accessToken = loginJson.get("accessToken").asText();
 
-        // Cambiar contraseña
+        
         ChangePasswordRequest changePasswordRequest = ChangePasswordRequest.builder()
                 .currentPassword("pass1234")
                 .newPassword("nueva123")
@@ -112,7 +112,7 @@ class AutenticacionE2ETest {
                         .content(objectMapper.writeValueAsString(changePasswordRequest)))
                 .andExpect(status().isOk());
 
-        // Intentar login con la contraseña antigua debe fallar (400 o 401 dependiendo del manejo global)
+        
         LoginRequest loginConAntigua = new LoginRequest();
         loginConAntigua.setCorreo("change.pass@gmail.com");
         loginConAntigua.setContrasena("pass1234");
@@ -122,7 +122,7 @@ class AutenticacionE2ETest {
                         .content(objectMapper.writeValueAsString(loginConAntigua)))
                 .andExpect(status().is4xxClientError());
 
-        // Login con la nueva contraseña debe funcionar
+        
         LoginRequest loginConNueva = new LoginRequest();
         loginConNueva.setCorreo("change.pass@gmail.com");
         loginConNueva.setContrasena("nueva123");
@@ -136,7 +136,7 @@ class AutenticacionE2ETest {
 
     @Test
     void noDeberiaPermitirCambiarContrasenaConActualIncorrecta() throws Exception {
-        // Registrar usuario
+        
         UsuarioRegistroDTO newUser = UsuarioRegistroDTO.builder()
                 .run("11111111-1")
                 .nombre("Cambio2")
@@ -154,7 +154,7 @@ class AutenticacionE2ETest {
                         .content(objectMapper.writeValueAsString(newUser)))
                 .andExpect(status().isOk());
 
-        // Login para obtener el accessToken
+        
         LoginRequest loginRequest = new LoginRequest();
         loginRequest.setCorreo("change.pass2@gmail.com");
         loginRequest.setContrasena("pass1234");
@@ -169,7 +169,7 @@ class AutenticacionE2ETest {
         JsonNode loginJson = objectMapper.readTree(loginResponseBody);
         String accessToken = loginJson.get("accessToken").asText();
 
-        // Intentar cambiar contraseña con currentPassword incorrecta
+        
         ChangePasswordRequest changePasswordRequest = ChangePasswordRequest.builder()
                 .currentPassword("incorrecta")
                 .newPassword("nueva123")
@@ -184,7 +184,7 @@ class AutenticacionE2ETest {
 
     @Test
     void noDeberiaPermitirCambiarContrasenaConNuevaInvalida() throws Exception {
-        // Registrar usuario
+        
         UsuarioRegistroDTO newUser = UsuarioRegistroDTO.builder()
                 .run("11111111-1")
                 .nombre("Cambio3")
@@ -202,7 +202,7 @@ class AutenticacionE2ETest {
                         .content(objectMapper.writeValueAsString(newUser)))
                 .andExpect(status().isOk());
 
-        // Login para obtener el accessToken
+        
         LoginRequest loginRequest = new LoginRequest();
         loginRequest.setCorreo("change.pass3@gmail.com");
         loginRequest.setContrasena("pass1234");
@@ -217,7 +217,7 @@ class AutenticacionE2ETest {
         JsonNode loginJson = objectMapper.readTree(loginResponseBody);
         String accessToken = loginJson.get("accessToken").asText();
 
-        // Intentar cambiar contraseña con nueva contraseña inválida (muy corta)
+        
         ChangePasswordRequest changePasswordRequest = ChangePasswordRequest.builder()
                 .currentPassword("pass1234")
                 .newPassword("123")
