@@ -76,7 +76,7 @@ class BoletaE2ETest {
                                 .nombre("Cliente")
                                 .apellidos("Test")
                                 .correo("cliente-" + uniqueId + "@gmail.com") 
-                                .contrasena(passwordEncoder.encode("cliente"))
+                                .contrasena(passwordEncoder.encode("cliente123"))
                                 .fechaNacimiento(LocalDate.now().minusYears(20))
                                 .roles(Set.of(RolUsuario.CLIENTE))
                                 .activo(true)
@@ -106,7 +106,7 @@ class BoletaE2ETest {
                 
                 LoginRequest loginRequest = LoginRequest.builder()
                                 .correo(cliente.getCorreo())
-                                .contrasena("cliente")
+                                .contrasena("cliente123")
                                 .build();
                 MvcResult result = mockMvc.perform(post("/api/v1/auth/login")
                                 .contentType(MediaType.APPLICATION_JSON)

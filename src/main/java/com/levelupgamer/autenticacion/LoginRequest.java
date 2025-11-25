@@ -17,7 +17,7 @@ public class LoginRequest {
     @Email
     private String correo;
     @NotNull
-    @Size(min = 4, max = 10)
+    @Size(min = 8, max = 32, message = "La contraseña debe tener entre 8 y 32 caracteres")
     private String contrasena;
 
     private com.levelupgamer.usuarios.RolUsuario rol;

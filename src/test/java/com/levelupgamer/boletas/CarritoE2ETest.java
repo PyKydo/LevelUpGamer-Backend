@@ -80,7 +80,7 @@ class CarritoE2ETest {
                                 .nombre("Cliente Carrito")
                                 .apellidos("Test")
                                 .correo("carrito-" + uniqueId + "@gmail.com")
-                                .contrasena(passwordEncoder.encode("cliente"))
+                                .contrasena(passwordEncoder.encode("cliente123"))
                                 .fechaNacimiento(LocalDate.now().minusYears(25))
                                 .roles(Set.of(RolUsuario.CLIENTE))
                                 .activo(true)
@@ -102,7 +102,7 @@ class CarritoE2ETest {
                 
                 LoginRequest loginRequest = LoginRequest.builder()
                                 .correo(usuario.getCorreo())
-                                .contrasena("cliente")
+                                .contrasena("cliente123")
                                 .build();
                 MvcResult result = mockMvc.perform(post("/api/v1/auth/login")
                                 .contentType(MediaType.APPLICATION_JSON)

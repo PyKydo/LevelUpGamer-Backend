@@ -56,7 +56,7 @@ class UsuarioE2ETest {
                                 .nombre("Usuario")
                                 .apellidos("E2E")
                                 .correo("usuario-e2e-" + uniqueId + "@gmail.com")
-                                .contrasena(passwordEncoder.encode("user123"))
+                                .contrasena(passwordEncoder.encode("user12345"))
                                 .fechaNacimiento(LocalDate.now().minusYears(25))
                                 .region("Metropolitana")
                                 .comuna("Santiago")
@@ -69,7 +69,7 @@ class UsuarioE2ETest {
 
                 LoginRequest loginRequest = LoginRequest.builder()
                                 .correo(cliente.getCorreo())
-                                .contrasena("user123")
+                                .contrasena("user12345")
                                 .build();
                 MvcResult result = mockMvc.perform(post("/api/v1/auth/login")
                                 .contentType(MediaType.APPLICATION_JSON)

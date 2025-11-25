@@ -59,7 +59,7 @@ class GamificacionE2ETest {
                                 .nombre("Gamificado")
                                 .apellidos("Test")
                                 .correo("gami-" + uniqueId + "@gmail.com")
-                                .contrasena(passwordEncoder.encode("gami123"))
+                                .contrasena(passwordEncoder.encode("gami1234"))
                                 .fechaNacimiento(LocalDate.now().minusYears(22))
                                 .roles(Set.of(RolUsuario.CLIENTE))
                                 .activo(true)
@@ -70,7 +70,7 @@ class GamificacionE2ETest {
                 
                 LoginRequest loginRequest = LoginRequest.builder()
                                 .correo(cliente.getCorreo())
-                                .contrasena("gami123")
+                                .contrasena("gami1234")
                                 .build();
                 MvcResult result = mockMvc.perform(post("/api/v1/auth/login")
                                 .contentType(MediaType.APPLICATION_JSON)
