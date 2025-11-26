@@ -146,8 +146,8 @@ public class ProductoService {
 
         return productoRepository.findById(id).map(producto -> {
             validarPermisosSobreProducto(producto, usuarioActual, isAdmin, isVendor);
-            producto.setActivo(false);
-            productoRepository.save(producto);
+            eliminarImagenes(producto.getImagenes());
+            productoRepository.delete(producto);
             return true;
         }).orElse(false);
     }
@@ -213,6 +213,22 @@ public class ProductoService {
         return vendedor != null && vendedor.getRoles() != null
                 && vendedor.getRoles().contains(RolUsuario.ADMINISTRADOR)
                 && !vendedor.getRoles().contains(RolUsuario.VENDEDOR);
+    }
+
+    private void eliminarImagenes(List<String> imagenes) {
+        if (imagenes == null || imagenes.isEmpty()) {
+            return;
+        }
+        for (String imagen : imagenes) {
+            if (imagen == null || imagen.isBlank()) {
+                continue;
+            }
+            try {
+                fileStorageService.deleteIfManaged(imagen.trim());
+            } catch (IOException e) {
+                throw new IllegalStateException("No se pudo eliminar la imagen asociada al producto", e);
+            }
+        }
     }
 
     private Authentication requireAuthentication() {

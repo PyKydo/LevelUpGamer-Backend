@@ -71,7 +71,7 @@ public class ProductoController {
     }
 
         @Operation(summary = "Eliminar producto",
-            description = "Marca el producto como inactivo. Los vendedores sólo pueden operar sobre su inventario y nunca sobre LevelUp.")
+            description = "Elimina definitivamente el producto y sus recursos asociados. Los vendedores sólo pueden operar sobre su inventario y nunca sobre LevelUp.")
         @PreAuthorize("hasAnyRole('ADMINISTRADOR','VENDEDOR')")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> eliminarProducto(@PathVariable Long id) {

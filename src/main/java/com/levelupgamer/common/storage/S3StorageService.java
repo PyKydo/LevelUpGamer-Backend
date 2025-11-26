@@ -14,6 +14,7 @@ import org.springframework.util.StringUtils;
 import software.amazon.awssdk.core.ResponseInputStream;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
@@ -61,6 +62,26 @@ public class S3StorageService implements FileStorageService {
             return Optional.empty();
         }
         return Optional.of(getFileContent(key));
+    }
+
+    @Override
+    public boolean deleteIfManaged(String publicUrl) throws IOException {
+        String key = resolveKey(publicUrl);
+        if (key == null) {
+            return false;
+        }
+
+        DeleteObjectRequest request = DeleteObjectRequest.builder()
+                .bucket(bucketName)
+                .key(key)
+                .build();
+
+        try {
+            s3Client.deleteObject(request);
+            return true;
+        } catch (Exception ex) {
+            throw new IOException("Error al eliminar el objeto S3: " + ex.getMessage(), ex);
+        }
     }
 
     private String getFileContent(String key) throws IOException {

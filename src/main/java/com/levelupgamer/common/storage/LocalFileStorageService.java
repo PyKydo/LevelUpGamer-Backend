@@ -65,6 +65,30 @@ public class LocalFileStorageService implements FileStorageService {
         return Optional.of(Files.readString(candidate));
     }
 
+    @Override
+    public boolean deleteIfManaged(String publicUrl) throws IOException {
+        if (!StringUtils.hasText(publicUrl)) {
+            return false;
+        }
+
+        String normalized = publicUrl.trim();
+        if (normalized.startsWith("file:")) {
+            Path target = Path.of(java.net.URI.create(normalized));
+            return Files.deleteIfExists(target);
+        }
+
+        String relative = extractRelativePath(normalized);
+        if (relative == null) {
+            return false;
+        }
+
+        Path candidate = basePath.resolve(relative).normalize();
+        if (!candidate.startsWith(basePath)) {
+            return false;
+        }
+        return Files.deleteIfExists(candidate);
+    }
+
     private String extractRelativePath(String value) {
         if (value.startsWith(publicPrefix)) {
             return value.substring(publicPrefix.length());

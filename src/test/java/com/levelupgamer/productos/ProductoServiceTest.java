@@ -29,6 +29,7 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
 @SuppressWarnings("null")
@@ -220,25 +221,60 @@ class ProductoServiceTest {
     }
 
     @Test
-    void eliminarProducto_productoExistente_desactivaYRetornaTrue() {
-        authenticateAs(adminUsuario.getCorreo(), "ADMINISTRADOR");
-        when(usuarioRepository.findByCorreo(adminUsuario.getCorreo())).thenReturn(Optional.of(adminUsuario));
+    void actualizarProducto_vendedorPropietario_puedeModificar() {
+        producto.setVendedor(vendedorUsuario);
+        ProductoRequest productoActualizado = productoRequest.toBuilder()
+                .nombre("Producto Vendedor")
+                .build();
+
+        authenticateAs(vendedorUsuario.getCorreo(), "VENDEDOR");
+        when(usuarioRepository.findByCorreo(vendedorUsuario.getCorreo())).thenReturn(Optional.of(vendedorUsuario));
         when(productoRepository.findById(1L)).thenReturn(Optional.of(producto));
-        boolean result = productoService.eliminarProducto(1L);
-        assertTrue(result);
-        assertFalse(producto.getActivo());
-        verify(productoRepository, times(1)).save(producto);
+        when(productoRepository.save(any(Producto.class))).thenReturn(producto);
+
+        Optional<Producto> result = productoService.actualizarProducto(1L, productoActualizado);
+
+        assertTrue(result.isPresent());
+        verify(productoRepository).save(producto);
     }
 
     @Test
-    void eliminarProducto_vendedorNoPropietario_lanzaAccesoDenegado() {
+    void eliminarProducto_productoExistente_eliminaYRetornaTrue() throws IOException {
+        authenticateAs(adminUsuario.getCorreo(), "ADMINISTRADOR");
+        when(usuarioRepository.findByCorreo(adminUsuario.getCorreo())).thenReturn(Optional.of(adminUsuario));
+        when(productoRepository.findById(1L)).thenReturn(Optional.of(producto));
+        when(fileStorageService.deleteIfManaged(anyString())).thenReturn(true);
+        boolean result = productoService.eliminarProducto(1L);
+        assertTrue(result);
+        verify(fileStorageService, times(1)).deleteIfManaged("http://example.com/test.jpg");
+        verify(productoRepository, times(1)).delete(producto);
+    }
+
+    @Test
+    void eliminarProducto_vendedorPropietario_puedeEliminar() throws IOException {
+        producto.setVendedor(vendedorUsuario);
+        authenticateAs(vendedorUsuario.getCorreo(), "VENDEDOR");
+        when(usuarioRepository.findByCorreo(vendedorUsuario.getCorreo())).thenReturn(Optional.of(vendedorUsuario));
+        when(productoRepository.findById(1L)).thenReturn(Optional.of(producto));
+        when(fileStorageService.deleteIfManaged(anyString())).thenReturn(true);
+
+        boolean result = productoService.eliminarProducto(1L);
+
+        assertTrue(result);
+        verify(fileStorageService, times(1)).deleteIfManaged("http://example.com/test.jpg");
+        verify(productoRepository).delete(producto);
+    }
+
+    @Test
+    void eliminarProducto_vendedorNoPropietario_lanzaAccesoDenegado() throws IOException {
         producto.setVendedor(adminUsuario);
         authenticateAs(vendedorUsuario.getCorreo(), "VENDEDOR");
         when(usuarioRepository.findByCorreo(vendedorUsuario.getCorreo())).thenReturn(Optional.of(vendedorUsuario));
         when(productoRepository.findById(1L)).thenReturn(Optional.of(producto));
 
         assertThrows(AccessDeniedException.class, () -> productoService.eliminarProducto(1L));
-        verify(productoRepository, never()).save(producto);
+        verify(fileStorageService, never()).deleteIfManaged(anyString());
+        verify(productoRepository, never()).delete(producto);
     }
 
     private void authenticateAs(String correo, String... roles) {

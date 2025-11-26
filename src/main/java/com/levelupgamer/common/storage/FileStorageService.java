@@ -19,4 +19,8 @@ public interface FileStorageService {
             String contentType) throws IOException;
 
     Optional<String> readContentIfManaged(String publicUrl) throws IOException;
+
+    default boolean deleteIfManaged(String publicUrl) throws IOException {
+        return false;
+    }
 }
