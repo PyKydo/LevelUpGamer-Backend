@@ -135,7 +135,7 @@ class ProductoE2ETest {
                                 MediaType.IMAGE_JPEG_VALUE,
                                 "fake-image-content".getBytes());
 
-                when(fileStorageService.uploadFile(any(), any(), anyLong())).thenReturn("/uploads/e2e.jpg");
+                when(fileStorageService.uploadFile(any(), any(), anyLong(), any(), any())).thenReturn("/uploads/e2e.jpg");
 
                 MvcResult creation = mockMvc.perform(multipart("/api/v1/products")
                                 .file(productoPart)
@@ -194,7 +194,7 @@ class ProductoE2ETest {
                                 MediaType.IMAGE_JPEG_VALUE,
                                 "fake-image-content".getBytes());
 
-                when(fileStorageService.uploadFile(any(), any(), anyLong())).thenReturn("/uploads/e2e.jpg");
+                when(fileStorageService.uploadFile(any(), any(), anyLong(), any(), any())).thenReturn("/uploads/e2e.jpg");
 
                 MvcResult creationResult = mockMvc.perform(multipart("/api/v1/products")
                                 .file(productoPart)

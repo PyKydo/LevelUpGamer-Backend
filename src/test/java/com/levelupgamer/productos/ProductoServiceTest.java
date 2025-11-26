@@ -153,7 +153,7 @@ class ProductoServiceTest {
         authenticateAs(adminUsuario.getCorreo(), "ADMINISTRADOR");
         when(usuarioRepository.findByCorreo(adminUsuario.getCorreo())).thenReturn(Optional.of(adminUsuario));
         when(productoRepository.existsByCodigo("P001")).thenReturn(false);
-        when(fileStorageService.uploadFile(any(), any(), anyLong())).thenReturn(imageUrl);
+        when(fileStorageService.uploadFile(any(), any(), anyLong(), any(), any())).thenReturn(imageUrl);
         when(productoRepository.save(any(Producto.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         
@@ -174,7 +174,7 @@ class ProductoServiceTest {
 
         
         assertThrows(IllegalArgumentException.class, () -> productoService.crearProducto(productoRequest, mockImage));
-        verify(fileStorageService, never()).uploadFile(any(), any(), anyLong());
+        verify(fileStorageService, never()).uploadFile(any(), any(), anyLong(), any(), any());
         verify(productoRepository, never()).save(any(Producto.class));
     }
 
@@ -188,7 +188,7 @@ class ProductoServiceTest {
         ProductoDTO result = productoService.crearProducto(productoRequest, null);
 
         assertNotNull(result);
-        verify(fileStorageService, never()).uploadFile(any(), any(), anyLong());
+        verify(fileStorageService, never()).uploadFile(any(), any(), anyLong(), any(), any());
         verify(productoRepository, times(1)).save(any(Producto.class));
     }
 
