@@ -90,6 +90,15 @@ public class CuponService {
         cuponRepository.save(cupon);
     }
 
+    @Transactional
+    public void reactivarCupon(Cupon cupon) {
+        if (cupon == null) {
+            return;
+        }
+        cupon.setEstado(EstadoCupon.ACTIVO);
+        cuponRepository.save(cupon);
+    }
+
     private String generarCodigoUnico() {
         String codigo;
         do {

@@ -75,6 +75,26 @@ public class PuntosService {
         return new PuntosDTO(saved.getUsuarioId(), saved.getPuntosAcumulados());
     }
 
+    @Transactional
+    public PuntosDTO restarPuntosPorAjuste(Long usuarioId, Integer puntosAjustados, String descripcion) {
+        Long safeUsuarioId = Objects.requireNonNull(usuarioId, "usuarioId es requerido");
+        Integer safePuntos = Objects.requireNonNull(puntosAjustados, "puntosAjustados es requerido");
+
+        Puntos puntos = puntosRepository.findByUsuarioId(safeUsuarioId)
+                .orElseThrow(() -> new IllegalArgumentException("Usuario sin puntos registrados"));
+
+        if (puntos.getPuntosAcumulados() < safePuntos) {
+            throw new IllegalArgumentException("No tiene suficientes puntos para revertir la operación solicitada");
+        }
+
+        puntos.setPuntosAcumulados(puntos.getPuntosAcumulados() - safePuntos);
+        Puntos saved = puntosRepository.save(puntos);
+        registrarMovimiento(saved, safePuntos, TipoMovimientoPuntos.CANJE,
+                descripcion != null ? descripcion : "Ajuste de puntos");
+
+        return new PuntosDTO(saved.getUsuarioId(), saved.getPuntosAcumulados());
+    }
+
     @SuppressWarnings("null")
     private void registrarMovimiento(Puntos puntos, Integer cantidad, TipoMovimientoPuntos tipo, String descripcion) {
         MovimientoPuntos movimiento = MovimientoPuntos.builder()

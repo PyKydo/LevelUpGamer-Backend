@@ -111,6 +111,16 @@ public class BoletaService {
     }
 
     /**
+     * Lista todas las boletas del sistema. Uso restringido a administración.
+     */
+    @Transactional(readOnly = true)
+    public List<BoletaRespuestaDTO> listarTodas() {
+        return boletaRepository.findAll().stream()
+                .map(BoletaMapper::toDTO)
+                .collect(Collectors.toList());
+    }
+
+    /**
      * Lista las boletas de un usuario específico.
      *
      * @param usuarioId ID del usuario.
@@ -134,6 +144,39 @@ public class BoletaService {
     public Optional<Boleta> buscarPorId(Long id) {
         Objects.requireNonNull(id, "El id de la boleta no puede ser nulo");
         return boletaRepository.findById(id);
+    }
+
+    @Transactional
+    public BoletaRespuestaDTO actualizarEstado(Long boletaId, EstadoBoleta estadoSolicitado) {
+        Objects.requireNonNull(boletaId, "El id de la boleta no puede ser nulo");
+        Objects.requireNonNull(estadoSolicitado, "El estado solicitado no puede ser nulo");
+
+        Boleta boleta = boletaRepository.findById(boletaId)
+                .orElseThrow(() -> new IllegalArgumentException("Boleta no encontrada"));
+
+        if (boleta.getEstado() == EstadoBoleta.CANCELADO && estadoSolicitado != EstadoBoleta.CANCELADO) {
+            throw new IllegalStateException("No es posible reabrir una boleta cancelada");
+        }
+
+        if (estadoSolicitado == EstadoBoleta.CANCELADO && boleta.getEstado() != EstadoBoleta.CANCELADO) {
+            revertirInventarioYBeneficios(boleta);
+        }
+
+        boleta.setEstado(estadoSolicitado);
+        return BoletaMapper.toDTO(boletaRepository.save(boleta));
+    }
+
+    @Transactional
+    public void eliminarBoleta(Long boletaId) {
+        Objects.requireNonNull(boletaId, "El id de la boleta no puede ser nulo");
+        Boleta boleta = boletaRepository.findById(boletaId)
+                .orElseThrow(() -> new IllegalArgumentException("Boleta no encontrada"));
+
+        if (boleta.getEstado() != EstadoBoleta.CANCELADO) {
+            revertirInventarioYBeneficios(boleta);
+        }
+
+        boletaRepository.delete(boleta);
     }
 
     
@@ -233,5 +276,46 @@ public class BoletaService {
         if (diferencia.compareTo(new BigDecimal("0.01")) > 0) {
             throw new IllegalArgumentException("El total enviado no coincide con el calculado por el sistema");
         }
+    }
+
+    private void revertirInventarioYBeneficios(Boleta boleta) {
+        List<BoletaDetalle> detalles = boleta.getDetalles();
+        if (detalles != null) {
+            for (BoletaDetalle detalle : detalles) {
+                Producto producto = detalle.getProducto();
+                if (producto == null) {
+                    continue;
+                }
+                producto.setStock(producto.getStock() + detalle.getCantidad());
+                productoRepository.save(producto);
+            }
+        }
+
+        int puntosRegistrados = calcularPuntosDesdeDetalles(boleta);
+        if (puntosRegistrados > 0) {
+            puntosService.restarPuntosPorAjuste(boleta.getUsuario().getId(), puntosRegistrados,
+                    "Reverso boleta #" + boleta.getId());
+        }
+
+        if (boleta.getCupon() != null) {
+            cuponService.reactivarCupon(boleta.getCupon());
+        }
+    }
+
+    private int calcularPuntosDesdeDetalles(Boleta boleta) {
+        List<BoletaDetalle> detalles = boleta.getDetalles();
+        if (detalles == null) {
+            return 0;
+        }
+        int total = 0;
+        for (BoletaDetalle detalle : detalles) {
+            Producto producto = detalle.getProducto();
+            if (producto == null) {
+                continue;
+            }
+            int puntosProducto = producto.getPuntosLevelUp() != null ? producto.getPuntosLevelUp() : 0;
+            total += puntosProducto * detalle.getCantidad();
+        }
+        return total;
     }
 }
