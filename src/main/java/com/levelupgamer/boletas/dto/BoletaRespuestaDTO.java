@@ -16,6 +16,7 @@ import lombok.NoArgsConstructor;
 public class BoletaRespuestaDTO {
     private Long id;
     private Long usuarioId;
+    private BoletaUsuarioDTO usuario;
     private List<BoletaDetalleRespuestaDTO> detalles;
     private BigDecimal total;
     private BigDecimal totalAntesDescuentos;

@@ -2,6 +2,8 @@ package com.levelupgamer.boletas;
 
 import com.levelupgamer.boletas.dto.BoletaDetalleRespuestaDTO;
 import com.levelupgamer.boletas.dto.BoletaRespuestaDTO;
+import com.levelupgamer.boletas.dto.BoletaUsuarioDTO;
+import com.levelupgamer.usuarios.Usuario;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -10,6 +12,7 @@ public class BoletaMapper {
         BoletaRespuestaDTO dto = new BoletaRespuestaDTO();
         dto.setId(boleta.getId());
         dto.setUsuarioId(boleta.getUsuario() != null ? boleta.getUsuario().getId() : null);
+        dto.setUsuario(toUsuarioDTO(boleta.getUsuario()));
         dto.setDetalles(toDetalleDTOList(boleta.getDetalles()));
         dto.setTotal(boleta.getTotal());
         dto.setTotalAntesDescuentos(boleta.getTotalAntesDescuentos());
@@ -35,6 +38,18 @@ public class BoletaMapper {
         dto.setPrecioUnitario(detalle.getPrecioUnitario());
         dto.setSubtotal(detalle.getSubtotal());
         return dto;
+    }
+
+    private static BoletaUsuarioDTO toUsuarioDTO(Usuario usuario) {
+        if (usuario == null) {
+            return null;
+        }
+        return BoletaUsuarioDTO.builder()
+                .id(usuario.getId())
+                .nombre(usuario.getNombre())
+                .apellidos(usuario.getApellidos())
+                .correo(usuario.getCorreo())
+                .build();
     }
 }
 

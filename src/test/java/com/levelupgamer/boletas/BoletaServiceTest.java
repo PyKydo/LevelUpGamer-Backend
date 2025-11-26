@@ -68,6 +68,8 @@ class BoletaServiceTest {
         usuario = new Usuario();
         usuario.setId(1L);
         usuario.setCorreo("test@example.com");
+        usuario.setNombre("Cliente");
+        usuario.setApellidos("Demo");
 
         vendedor = new Usuario();
         vendedor.setId(2L);
@@ -105,6 +107,10 @@ class BoletaServiceTest {
         assertEquals(new BigDecimal("200.00"), result.getTotalAntesDescuentos());
         assertEquals(new BigDecimal("200.00"), result.getTotal());
         assertEquals(8, producto.getStock());
+        assertNotNull(result.getUsuario());
+        assertEquals("Cliente", result.getUsuario().getNombre());
+        assertEquals("Demo", result.getUsuario().getApellidos());
+        assertEquals("test@example.com", result.getUsuario().getCorreo());
 
         verify(puntosService, times(1)).sumarPuntos(new PuntosDTO(1L, 200));
         verify(productoRepository, times(1)).save(producto);
