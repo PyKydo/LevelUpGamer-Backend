@@ -58,4 +58,19 @@ public class ResenaController {
                 .build()).collect(Collectors.toList());
         return ResponseEntity.ok(dtos);
     }
+    
+    @PreAuthorize("hasAnyRole('CLIENTE', 'ADMINISTRADOR')")
+    @DeleteMapping("/reviews/{id}")
+    public ResponseEntity<Void> eliminarResena(@PathVariable Long id) {
+        var auth = SecurityContextHolder.getContext().getAuthentication();
+        boolean esAdmin = auth.getAuthorities().stream()
+                .anyMatch(authority -> "ROLE_ADMINISTRADOR".equals(authority.getAuthority()));
+        
+        String email = auth.getName();
+        Usuario usuario = usuarioRepository.findByCorreo(email)
+                .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado"));
+        
+        resenaService.eliminarResena(id, usuario.getId(), esAdmin);
+        return ResponseEntity.noContent().build();
+    }
 }
