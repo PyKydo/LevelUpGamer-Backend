@@ -45,7 +45,7 @@ Cada dominio vive bajo `com.levelupgamer.{dominio}` y expone controladores REST 
 - **Perfiles**:
   - `dev`: H2 (`jdbc:h2:mem:testdb`), bucket/region definidos en `application-dev.properties` y "safe defaults" que redirigen cargas a imágenes/payloads fallback (Picsum) sin necesidad de credenciales reales.
   - `test`: H2 aislado + propiedades dummy para AWS (`application-test.properties`) que reutilizan los mismos fallbacks, permitiendo ejecutar suites sin configurar secretos.
-  - `prod`: PostgreSQL via `DB_URL`, deshabilita Flyway temporalmente y toma bucket/region/credenciales desde variables de entorno.
+  - `prod`: PostgreSQL via `DB_URL`, deshabilita Flyway temporalmente y toma bucket/region desde variables de entorno mientras las credenciales AWS provienen de la Default Credential Provider Chain (IAM Role de la instancia, variables de entorno, `~/.aws/credentials`, etc.).
 
 ### Variables de Entorno para `prod`
 
@@ -54,10 +54,11 @@ Cada dominio vive bajo `com.levelupgamer.{dominio}` y expone controladores REST 
 | `DB_URL`, `DB_USER`, `DB_PASSWORD` | Datos de conexión a PostgreSQL. |
 | `AWS_REGION` | Región del bucket S3 (ej: `us-east-1`). |
 | `S3_BUCKET_NAME` | Nombre del bucket usado para imágenes y markdown. |
-| `AWS_ACCESS_KEY` / `AWS_SECRET_KEY` | Credenciales con permisos `s3:GetObject`/`PutObject`. |
+| *(Opcional)* `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` | Solo si no hay un IAM Role disponible; cualquier proveedor soportado por la Default Credential Provider Chain es válido. |
 | `JWT_SECRET` | Clave HMAC usada por `JwtProvider` (reemplaza la default hardcodeada en prod). |
 | `SERVER_PORT` | Opcional para exponer el backend en otro puerto (ej: 80/443 detrás de Nginx). |
 
+La aplicación ya **no lee** credenciales desde `application*.properties`; el SDK de AWS resuelve automáticamente la cadena de credenciales (IAM Role recomendado en EC2).
 Consulta `docs/personal/DEPLOYMENT.md` para el detalle de `EnvironmentFile` y el servicio systemd `levelupgamer.service`.
 
 ## Datos Semilla y Archivos S3
@@ -104,7 +105,7 @@ Consulta `docs/personal/DEPLOYMENT.md` para el detalle de `EnvironmentFile` y el
 
 ## Ejecución Rápida en Desarrollo
 
-1. Configura (opcional) `aws.s3.bucket.name`, `aws.region`, `aws.accessKey`, `aws.secretKey` en `application-dev.properties` o variables de entorno.
+1. Configura (opcional) `aws.s3.bucket.name`, `aws.region` en `application-dev.properties` o variables de entorno.
 2. Ejecuta `./mvnw spring-boot:run` (perfil `dev` activado por defecto).
 3. Usa las credenciales sembradas (por ejemplo `admin@gmail.com / admin123`). También están disponibles `cliente@gmail.com / cliente123` y `vendedor@gmail.com / vendedor123` para validar los roles CLIENTE y VENDEDOR.
 4. Abre Swagger para probar los endpoints o consulta la guía en `docs/personal/API Endpoints.md`.
@@ -130,8 +131,7 @@ Para desplegar en producción, es necesario configurar las siguientes variables 
 | `DB_USER`         | Usuario de la base de datos.                          | `admin`                                                 |
 | `DB_PASS`         | Contraseña de la base de datos.                       | `secret_password`                                       |
 | `S3_BUCKET_NAME`  | Nombre del bucket de AWS S3 para almacenar archivos.  | `levelupgamer-assets`                                   |
-| `AWS_ACCESS_KEY_ID` | Clave de acceso de IAM para AWS.                      | `AKIAIOSFODNN7EXAMPLE`                                  |
-| `AWS_SECRET_ACCESS_KEY` | Clave de acceso secreta de IAM para AWS.          | `wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY`              |
+| *(Opcional)* `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` | Solo si no cuentas con IAM Role; cualquier proveedor soportado por la Default Credential Provider Chain funciona. | `AKIAIOSFODNN7EXAMPLE` / `wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY` |
 | `JWT_SECRET`      | Clave secreta para firmar los tokens JWT.             | `una_clave_muy_larga_y_segura_para_produccion`          |
 
 ### Despliegue Automatizado con GitHub Actions
