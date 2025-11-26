@@ -136,7 +136,7 @@ class ProductoServiceTest {
 
         authenticateAs(vendedorUsuario.getCorreo(), "VENDEDOR");
         when(usuarioRepository.findByCorreo(vendedorUsuario.getCorreo())).thenReturn(Optional.of(vendedorUsuario));
-        when(productoRepository.findAllByVendedorId(vendedorUsuario.getId())).thenReturn(Collections.singletonList(productoVendedor));
+        when(productoRepository.findByVendedorId(vendedorUsuario.getId())).thenReturn(Collections.singletonList(productoVendedor));
 
         List<ProductoDTO> result = productoService.listarProductos();
 

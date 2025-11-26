@@ -46,7 +46,7 @@ public class ProductoService {
         List<Producto> productos;
         if (isAuthenticated && isVendor && !isAdmin) {
             Usuario vendedor = resolveCurrentUser(authentication);
-            productos = productoRepository.findAllByVendedorId(vendedor.getId());
+            productos = productoRepository.findByVendedorId(vendedor.getId());
         } else {
             productos = productoRepository.findAll();
         }
