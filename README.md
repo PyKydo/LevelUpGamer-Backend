@@ -10,10 +10,10 @@ Todos los endpoints REST están versionados bajo el prefijo `/api/v1/...` (ej. `
 - **Autenticación JWT**: login con selección explícita de rol cuando un usuario posee múltiples perfiles, emisión de tokens de acceso y refresh + endpoint de cambio de contraseña.
 - **Catálogo y stock**: CRUD de productos con ownership obligatorio (`Producto.vendedor`), carga de imágenes a S3, alertas de stock crítico en logs, campo `puntosLevelUp` (0-1000 en saltos de 100) para gamificación y endpoint de destacados (`GET /api/v1/products/featured`).
 - **Carrito persistente + Boletas**: carritos por usuario, generación de boletas (`POST /api/v1/boletas`) que descuentan stock, calculan subtotales y asignan puntos multiplicando `producto.puntosLevelUp * cantidad`; soporte para descuentos combinados (20% correos Duoc + cupones con tope 90%).
-- **Contenido**: blogs con cabeceras e imágenes almacenadas en S3 y recuperación del contenido en formato Markdown; formulario de contacto persistido en BD.
+- **Contenido**: blogs con cabeceras e imágenes almacenadas en S3 y recuperación del contenido en formato Markdown; todas las rutas siguen la convención `blogs/{id}/blog.{md|jpg}` (el inicializador migra automáticamente rutas antiguas) y el controlador fuerza UTF-8 al actuar como proxy de archivos externos para evitar corrupción de acentos; formulario de contacto persistido en BD.
 - **Programa de puntos y referidos**: saldo de puntos en tabla dedicada (`Puntos`) con operaciones de earn/redeem, acumulación basada en atributos `puntosLevelUp`, conversión de puntos a cupones (%5-%30) y bonificación automática a referidos en el registro.
 - **Sistema de cupones**: conversión de puntos a cupones únicos, listado de opciones disponibles, verificación de pertenencia/estado y soporte de stacking controlado con el descuento Duoc.
-- **Reseñas verified purchase**: sólo usuarios con boletas asociadas al producto pueden reseñar (validado vía `BoletaRepository`), manteniendo listados paginados por producto.
+- **Reseñas verified purchase**: endpoint `POST /api/v1/reviews` (CLIENTE/ADMIN) valida `texto` (1-1000), `calificacion` (1-5) y `productoId` con Bean Validation, comprueba compras en `BoletaRepository` y responde `400` con mensajes claros cuando no se cumplen las reglas; los listados públicos salen desde `GET /api/v1/products/{productId}/reviews` sin exigir autenticación.
 - **Observabilidad y documentación**: Swagger UI (`/swagger-ui/index.html`), Actuator y documentación funcional en `docs/personal`.
 
 ## Tecnologías y Dependencias Clave
@@ -23,7 +23,7 @@ Todos los endpoints REST están versionados bajo el prefijo `/api/v1/...` (ej. `
 - **Seguridad**: Spring Security + filtros JWT personalizados (`JwtAutenticacionFilter`, `JwtProvider`).
 - **Validaciones personalizadas**: anotaciones `@Rut`, `@Adult` y `@AllowedEmailDomain` con factoría de validadores registrada en `ValidationConfig`.
 - **Integraciones AWS**: SDK v2 para S3 y SES (pendiente de uso), `FileStorageService` con implementación S3 para prod y stub local en dev/test.
-- **Herramientas**: Lombok, SpringDoc OpenAPI (`springdoc-openapi-starter-webmvc-ui`), Maven Wrapper.
+- **Herramientas**: Lombok, SpringDoc OpenAPI (`springdoc-openapi-starter-webmvc-ui` 2.8.14 para estabilizar `/v3/api-docs`), driver PostgreSQL 42.7.8 (mitiga CVE-2024-1597) y Maven Wrapper.
 
 ## Arquitectura por Dominios
 
@@ -34,9 +34,9 @@ Cada dominio vive bajo `com.levelupgamer.{dominio}` y expone controladores REST 
 - `productos`: productos, categorías, reseñas, `puntosLevelUp` y seeding inicial (`ProductDataInitializer`).
 - `boletas`: carritos persistentes, boletas, DTOs y lógica de puntos/stock/alertas con descuentos compuestos y trazabilidad de cupones usados.
 - `gamificacion`: entidad `Puntos`, repositorio y servicios de earn/redeem + módulo de cupones con conversión, listado y canje.
-- `contenido`: blogs (lectura desde S3), mensajes de contacto y seeds (`BlogDataInitializer`).
+- `contenido`: blogs (lectura desde S3) con generación/migración automática de rutas `blogs/{id}` y forzado UTF-8 al proxyear contenido remoto, mensajes de contacto y seeds (`BlogDataInitializer`).
 - `common` y `config`: integraciones S3, validación, inicializadores y beans utilitarios.
-- `exception`: `GlobalExceptionHandler` con formato consistente de errores, incluyendo respuestas `403` para `AccessDeniedException` cuando un vendedor intenta manipular productos ajenos o corporativos.
+- `exception`: `GlobalExceptionHandler` con formato consistente de errores, incluyendo respuestas `403` para `AccessDeniedException` cuando un vendedor intenta manipular productos ajenos o corporativos y `400` para reglas de negocio (`IllegalStateException`, ej. reseñas sin compra).
 
 ## Perfiles, Puertos y Configuración
 
@@ -63,7 +63,7 @@ Consulta `docs/personal/DEPLOYMENT.md` para el detalle de `EnvironmentFile` y el
 ## Datos Semilla y Archivos S3
 
 - `DataInitializer`, `ProductDataInitializer` y `BlogDataInitializer` crean usuarios, productos e historias de blog cuando la base está vacía (perfiles `!test`). El seed incluye cuentas demo de administrador, cliente y vendedor para probar los distintos roles.
-- El contenido markdown de ejemplo vive en `s3-files/contenido/*.md`; al subirlo a S3 respeta la misma estructura (`blogs/{n}/blog.md`).
+- El contenido markdown de ejemplo vive en `s3-files/contenido/*.md`; al subirlo a S3 respeta la convención `blogs/{id}/blog.md` y `blogs/{id}/blog.jpg`. Si ya existían entradas bajo otro path, el `BlogDataInitializer` las corrige al iniciar cuando detecta un bucket configurado.
 - Para desarrollo se puede apuntar `aws.s3.bucket.url` a un bucket público o a un mock (ej: LocalStack).
 
 ## Validaciones y Reglas de Negocio Clave
@@ -72,6 +72,7 @@ Consulta `docs/personal/DEPLOYMENT.md` para el detalle de `EnvironmentFile` y el
 - Dominios permitidos para correo: `gmail.com`, `hotmail.com`, `outlook.com`, `yahoo.com`, `duoc.cl`, `profesor.duoc.cl`.
 - Edad mínima 18 años (`@Adult`).
 - Contraseñas entre 8 y 32 caracteres (pendiente extensión configurable).
+- Reseñas: `texto` obligatorio (≤1000 caracteres), `calificacion` entre 1 y 5 y `productoId` requerido; las violaciones responden `400` con mapa campo -> error y los intentos sin compra previa retornan `400` vía `IllegalStateException`.
 - Descuento 20% para correos `duoc.cl` / `profesor.duoc.cl` al generar boletas.
 - Stock crítico: log `WARN` cuando `stock <= stockCritico`.
 - Puntos LevelUp: cada producto define `puntosLevelUp` (0-1000, múltiplos de 100) que se multiplican por la cantidad al cerrar la boleta y se acumulan en `Puntos`.
@@ -81,8 +82,8 @@ Consulta `docs/personal/DEPLOYMENT.md` para el detalle de `EnvironmentFile` y el
 
 - Filtro `JwtAutenticacionFilter` agrega `SecurityContext` a partir del header `Authorization: Bearer <token>`.
 - `SecurityConfig` habilita CORS global (`*`) y define accesos:
-- Público: `/`, `/api/v1/auth/login`, `/api/v1/auth/refresh`, `/api/v1/users/register`, `/api/v1/products`, `/api/v1/products/{id}`, `/api/v1/products/featured`, `/api/v1/blog-posts/**`, `/api/v1/contact-messages`, `/swagger-ui/**`, `/v3/api-docs/**`.
-- Requiere autenticación: `/api/v1/users/{id}`, `/api/v1/categories/**`, `/api/v1/boletas/**`, `/api/v1/points/**`, `/api/v1/cart/**`, `/api/v1/reviews/**`, además de cualquier operación **POST/PUT/PATCH/DELETE** sobre `/api/v1/products/**`.
+- Público: `/`, `/api/v1/auth/login`, `/api/v1/auth/refresh`, `/api/v1/users/register`, `/api/v1/products`, `/api/v1/products/{id}`, `/api/v1/products/featured`, `GET /api/v1/products/{id}/reviews`, `/api/v1/blog-posts/**`, `/api/v1/contact-messages`, `/swagger-ui/**`, `/v3/api-docs/**`.
+- Requiere autenticación: `/api/v1/users/{id}`, `/api/v1/categories/**`, `/api/v1/boletas/**`, `/api/v1/points/**`, `/api/v1/cart/**`, `POST /api/v1/reviews` (limitado a CLIENTE/ADMIN), además de cualquier operación **POST/PUT/PATCH/DELETE** sobre `/api/v1/products/**`.
 - Rol vendedor: `VENDEDOR` puede listar solo sus productos, crear/actualizar/eliminar elementos de su inventario (no los corporativos) y consultar boletas para seguimiento comercial; cualquier intento fuera de esos límites responde `403`.
 - Solo admins: `/api/v1/users`, `/api/v1/users/roles`, `/api/v1/users/admin`, mutaciones de categorías y blogs, además de la gestión de productos corporativos “LevelUp”.
 - Errores se devuelven como `{ "error": "mensaje" }` o mapas campo -> error en validaciones.
