@@ -8,7 +8,6 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.time.LocalDate;
 import java.util.Optional;
-import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -31,15 +30,16 @@ public class LocalFileStorageService implements FileStorageService {
     }
 
     @Override
-    public String uploadFile(InputStream inputStream, String originalFileName, long contentLength) throws IOException {
-        String extension = extractExtension(originalFileName);
-        String folder = LocalDate.now().toString();
-        Path targetFolder = basePath.resolve(folder);
-        Files.createDirectories(targetFolder);
-        String fileName = UUID.randomUUID() + extension;
-        Path destination = targetFolder.resolve(fileName);
+    public String uploadFile(InputStream inputStream, String originalFileName, long contentLength, String folder,
+            String contentType) throws IOException {
+        String defaultFolder = StringUtils.hasText(folder) ? folder : LocalDate.now().toString();
+        String targetFolder = StorageKeyUtils.sanitizeFolder(folder, defaultFolder);
+        Path targetFolderPath = basePath.resolve(targetFolder);
+        Files.createDirectories(targetFolderPath);
+        String fileName = StorageKeyUtils.shortUuid() + "_" + StorageKeyUtils.sanitizeFileName(originalFileName);
+        Path destination = targetFolderPath.resolve(fileName);
         Files.copy(inputStream, destination, StandardCopyOption.REPLACE_EXISTING);
-        return publicPrefix + folder + "/" + fileName;
+        return publicPrefix + targetFolder + "/" + fileName;
     }
 
     @Override
@@ -82,18 +82,6 @@ public class LocalFileStorageService implements FileStorageService {
             return value.substring("local://".length());
         }
         return null;
-    }
-
-    private String extractExtension(String originalFileName) {
-        if (!StringUtils.hasText(originalFileName)) {
-            return "";
-        }
-        String filename = Paths.get(originalFileName).getFileName().toString();
-        int dotIndex = filename.lastIndexOf('.');
-        if (dotIndex >= 0 && dotIndex < filename.length() - 1) {
-            return filename.substring(dotIndex);
-        }
-        return "";
     }
 
     private String normalizePrefix(String prefix) {

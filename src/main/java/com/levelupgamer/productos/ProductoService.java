@@ -28,6 +28,7 @@ import org.springframework.web.multipart.MultipartFile;
 @SuppressWarnings("null")
 public class ProductoService {
 
+    private static final String PRODUCT_IMAGE_FOLDER = "products";
     private final ProductoRepository productoRepository;
     private final FileStorageService fileStorageService;
     private final CategoriaRepository categoriaRepository;
@@ -79,10 +80,12 @@ public class ProductoService {
         producto.setVendedor(resolveCurrentUser(authentication));
 
         if (imagen != null && !imagen.isEmpty()) {
-            String imageUrl = fileStorageService.uploadFile(
+                String imageUrl = fileStorageService.uploadFile(
                     imagen.getInputStream(),
                     imagen.getOriginalFilename(),
-                    imagen.getSize());
+                    imagen.getSize(),
+                    PRODUCT_IMAGE_FOLDER,
+                    imagen.getContentType());
             producto.setImagenes(Collections.singletonList(imageUrl));
         } else if (producto.getImagenes() == null) {
             producto.setImagenes(Collections.emptyList());

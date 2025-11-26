@@ -5,11 +5,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
 public class BlogService {
+    private static final String BLOG_IMAGE_FOLDER = "blogs";
     @Autowired
     private BlogRepository blogRepository;
 
@@ -27,8 +29,12 @@ public class BlogService {
     public BlogDTO crearBlog(Blog blog, org.springframework.web.multipart.MultipartFile imagen)
             throws java.io.IOException {
         if (imagen != null && !imagen.isEmpty()) {
-            String imageUrl = storageService.uploadFile(imagen.getInputStream(), imagen.getOriginalFilename(),
-                imagen.getSize());
+                String imageUrl = storageService.uploadFile(
+                    imagen.getInputStream(),
+                    imagen.getOriginalFilename(),
+                    imagen.getSize(),
+                    BLOG_IMAGE_FOLDER,
+                    imagen.getContentType());
             blog.setImagenUrl(imageUrl);
         }
         blog.setFechaPublicacion(java.time.LocalDate.now());
@@ -38,6 +44,7 @@ public class BlogService {
 
     @Transactional
     public Optional<Blog> actualizarBlog(Long id, Blog nuevo) {
+        Objects.requireNonNull(id, "id es obligatorio");
         return blogRepository.findById(id).map(blog -> {
             blog.setTitulo(nuevo.getTitulo());
             blog.setAutor(nuevo.getAutor());
@@ -52,6 +59,7 @@ public class BlogService {
 
     @Transactional
     public boolean eliminarBlog(Long id) {
+        Objects.requireNonNull(id, "id es obligatorio");
         if (blogRepository.existsById(id)) {
             blogRepository.deleteById(id);
             return true;
@@ -60,6 +68,7 @@ public class BlogService {
     }
 
     public Optional<Blog> buscarPorId(Long id) {
+        Objects.requireNonNull(id, "id es obligatorio");
         return blogRepository.findById(id);
     }
 

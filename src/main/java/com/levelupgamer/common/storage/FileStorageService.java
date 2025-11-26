@@ -6,7 +6,17 @@ import java.util.Optional;
 
 public interface FileStorageService {
 
-    String uploadFile(InputStream inputStream, String originalFileName, long contentLength) throws IOException;
+    default String uploadFile(InputStream inputStream, String originalFileName, long contentLength) throws IOException {
+        return uploadFile(inputStream, originalFileName, contentLength, null, null);
+    }
+
+    default String uploadFile(InputStream inputStream, String originalFileName, long contentLength, String folder)
+            throws IOException {
+        return uploadFile(inputStream, originalFileName, contentLength, folder, null);
+    }
+
+    String uploadFile(InputStream inputStream, String originalFileName, long contentLength, String folder,
+            String contentType) throws IOException;
 
     Optional<String> readContentIfManaged(String publicUrl) throws IOException;
 }

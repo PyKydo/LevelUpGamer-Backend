@@ -5,7 +5,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Optional;
-import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -23,6 +22,7 @@ import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 @ConditionalOnProperty(name = "storage.provider", havingValue = "s3")
 public class S3StorageService implements FileStorageService {
 
+    private static final String DEFAULT_FOLDER = "uploads";
     private final S3Client s3Client;
     private final String bucketName;
 
@@ -36,16 +36,21 @@ public class S3StorageService implements FileStorageService {
     }
 
     @Override
-    public String uploadFile(InputStream inputStream, String originalFileName, long contentLength) throws IOException {
-        String safeName = StringUtils.hasText(originalFileName) ? originalFileName : "asset";
-        String key = "uploads/" + UUID.randomUUID() + "-" + safeName;
+    public String uploadFile(InputStream inputStream, String originalFileName, long contentLength, String folder,
+            String contentType) throws IOException {
+        String targetFolder = StorageKeyUtils.sanitizeFolder(folder, DEFAULT_FOLDER);
+        String sanitizedName = StorageKeyUtils.sanitizeFileName(originalFileName);
+        String key = targetFolder + "/" + StorageKeyUtils.shortUuid() + "_" + sanitizedName;
 
-        PutObjectRequest putObjectRequest = PutObjectRequest.builder()
+        PutObjectRequest.Builder requestBuilder = PutObjectRequest.builder()
                 .bucket(bucketName)
-                .key(key)
-                .build();
+                .key(key);
 
-        s3Client.putObject(putObjectRequest, RequestBody.fromInputStream(inputStream, contentLength));
+        if (StringUtils.hasText(contentType)) {
+            requestBuilder.contentType(contentType);
+        }
+
+        s3Client.putObject(requestBuilder.build(), RequestBody.fromInputStream(inputStream, contentLength));
         return s3Client.utilities().getUrl(builder -> builder.bucket(bucketName).key(key)).toExternalForm();
     }
 
