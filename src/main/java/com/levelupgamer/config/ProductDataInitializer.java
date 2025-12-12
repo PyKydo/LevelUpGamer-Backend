@@ -8,6 +8,7 @@ import com.levelupgamer.usuarios.RolUsuario;
 import com.levelupgamer.usuarios.Usuario;
 import com.levelupgamer.usuarios.UsuarioRepository;
 import java.io.IOException;
+import java.io.InputStream;
 import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -20,6 +21,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.core.annotation.Order;
@@ -27,6 +29,10 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
+
+import software.amazon.awssdk.core.sync.RequestBody;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
 @Component
 @Profile("!test")
@@ -43,13 +49,15 @@ public class ProductDataInitializer implements CommandLineRunner {
         private final Path localProductAssetsBasePath;
         private final String localUploadsPrefix;
         private final String localBaseUrl;
+        private final S3Client s3Client;
 
         public ProductDataInitializer(ProductoRepository productoRepository, CategoriaRepository categoriaRepository,
                         UsuarioRepository usuarioRepository,
                         AwsStorageProperties awsStorageProperties,
                         @Value("${storage.local.base-path:${user.dir}/s3-files}") String localBasePath,
                         @Value("${storage.local.public-url-prefix:/uploads/}") String localPublicPrefix,
-                        @Value("${app.storage.local-base-url:}") String configuredLocalBaseUrl) {
+                        @Value("${app.storage.local-base-url:}") String configuredLocalBaseUrl,
+                        ObjectProvider<S3Client> s3ClientProvider) {
                 this.productoRepository = productoRepository;
                 this.categoriaRepository = categoriaRepository;
                 this.usuarioRepository = usuarioRepository;
@@ -57,6 +65,7 @@ public class ProductDataInitializer implements CommandLineRunner {
                 this.localProductAssetsBasePath = Paths.get(localBasePath).toAbsolutePath().normalize().resolve("products");
                 this.localUploadsPrefix = normalizePrefix(localPublicPrefix);
                 this.localBaseUrl = trimTrailingSlash(configuredLocalBaseUrl);
+                this.s3Client = s3ClientProvider.getIfAvailable();
                 try {
                         Files.createDirectories(this.localProductAssetsBasePath);
                 } catch (IOException ex) {
@@ -263,10 +272,9 @@ public class ProductDataInitializer implements CommandLineRunner {
         private List<String> buildSeedImagesForProduct(String productCode, String placeholderSeed) {
                 List<String> assetNames = collectLocalAssetNames(productCode);
                 if (!assetNames.isEmpty()) {
-                        if (awsStorageProperties.hasBucketConfigured()) {
-                                String bucketBase = resolveBucketBaseUrl();
+                        if (useS3Storage()) {
                                 return assetNames.stream()
-                                                .map(name -> bucketBase + "products/" + productCode + "/" + name)
+                                                .map(name -> uploadSeedImageToS3(productCode, name))
                                                 .toList();
                         }
                         return assetNames.stream()
@@ -291,6 +299,53 @@ public class ProductDataInitializer implements CommandLineRunner {
                         log.warn("No se pudieron leer los assets locales de {}: {}", productCode, ex.getMessage());
                         return Collections.emptyList();
                 }
+        }
+
+        private boolean useS3Storage() {
+                return awsStorageProperties.hasBucketConfigured() && s3Client != null;
+        }
+
+        private String uploadSeedImageToS3(String productCode, String fileName) {
+                if (!useS3Storage()) {
+                        throw new IllegalStateException("No hay configuración S3 disponible para sincronizar productos");
+                }
+                Path assetPath = localProductAssetsBasePath.resolve(productCode).resolve(fileName);
+                if (!Files.exists(assetPath)) {
+                        throw new IllegalStateException("El archivo seed " + fileName + " para el producto " + productCode + " no existe");
+                }
+                try {
+                        long size = Files.size(assetPath);
+                        try (InputStream inputStream = Files.newInputStream(assetPath)) {
+                        String key = "products/" + productCode + "/" + fileName;
+                        PutObjectRequest.Builder requestBuilder = PutObjectRequest.builder()
+                                        .bucket(awsStorageProperties.getBucketName())
+                                        .key(key)
+                                        .contentType(resolveContentType(fileName));
+                        s3Client.putObject(requestBuilder.build(), RequestBody.fromInputStream(inputStream, size));
+                        return buildS3Url(key);
+                        }
+                } catch (IOException ex) {
+                        throw new IllegalStateException("No se pudo subir la imagen seed " + fileName + " del producto " + productCode, ex);
+                }
+        }
+
+        private String resolveContentType(String fileName) {
+                int dot = fileName.lastIndexOf('.') + 1;
+                String extension = dot > 0 && dot < fileName.length()
+                                ? fileName.substring(dot).toLowerCase(Locale.ROOT)
+                                : "";
+                return switch (extension) {
+                        case "png" -> "image/png";
+                        case "gif" -> "image/gif";
+                        case "webp" -> "image/webp";
+                        case "bmp" -> "image/bmp";
+                        case "avif" -> "image/avif";
+                        default -> "image/jpeg";
+                };
+        }
+
+        private String buildS3Url(String key) {
+                return resolveBucketBaseUrl() + key;
         }
 
         private boolean isSupportedImage(String fileName) {
@@ -349,7 +404,7 @@ public class ProductDataInitializer implements CommandLineRunner {
         }
 
         private boolean ensureLocalImageConvention() {
-                if (awsStorageProperties.hasBucketConfigured()) {
+                if (useS3Storage()) {
                         return false;
                 }
                 boolean updatedAny = false;

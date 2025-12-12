@@ -60,10 +60,4 @@ temp/
 mvnw
 mvnw.cmd
 
-# S3 Files
-s3-files/
-!s3-files/README.md
-!s3-files/**/.gitkeep
-!s3-files/blogs/**/blog.md
-
 tools/
