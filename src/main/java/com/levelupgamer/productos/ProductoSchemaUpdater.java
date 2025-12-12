@@ -11,10 +11,6 @@ import org.springframework.stereotype.Component;
 
 import java.util.Objects;
 
-/**
- * Asegura que la tabla producto tenga la columna usuario_id necesaria para el control de ownership.
- * Esto cubre entornos donde la tabla fue creada antes de introducir la relación con vendedor.
- */
 @Slf4j
 @Component
 @Profile("!test")

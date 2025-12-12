@@ -49,6 +49,13 @@ public class ProductoController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
+    @GetMapping("/{id}/assets")
+    public ResponseEntity<List<String>> listarAssets(@PathVariable Long id) {
+        return productoService.listarAssets(id)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
         @Operation(summary = "Crear producto",
             description = "Asocia automáticamente el producto al usuario autenticado. Los vendedores no pueden enviar un ID de vendedor manual.")
         @PreAuthorize("hasAnyRole('ADMINISTRADOR','VENDEDOR')")

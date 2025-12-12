@@ -35,6 +35,13 @@ public class BlogController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
+    @GetMapping("/{id}/assets")
+    public ResponseEntity<List<String>> listarAssets(@PathVariable Long id) {
+        return blogService.listarAssets(id)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
     @GetMapping("/{id}/content")
     public ResponseEntity<String> getBlogContent(@PathVariable Long id) {
         var opt = blogService.buscarPorId(id);

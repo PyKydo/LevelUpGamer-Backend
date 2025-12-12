@@ -2,6 +2,8 @@ package com.levelupgamer.common.storage;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 
 public interface FileStorageService {
@@ -22,5 +24,9 @@ public interface FileStorageService {
 
     default boolean deleteIfManaged(String publicUrl) throws IOException {
         return false;
+    }
+
+    default List<String> listPublicUrls(String folder) throws IOException {
+        return Collections.emptyList();
     }
 }

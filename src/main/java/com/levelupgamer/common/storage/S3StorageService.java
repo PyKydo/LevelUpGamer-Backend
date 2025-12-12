@@ -4,12 +4,14 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.Optional;
 
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
+
+import com.levelupgamer.config.AwsStorageProperties;
 
 import software.amazon.awssdk.core.ResponseInputStream;
 import software.amazon.awssdk.core.sync.RequestBody;
@@ -17,7 +19,10 @@ import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
+import software.amazon.awssdk.services.s3.model.ListObjectsV2Request;
+import software.amazon.awssdk.services.s3.model.ListObjectsV2Response;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
+import software.amazon.awssdk.services.s3.model.S3Object;
 
 @Service
 @ConditionalOnProperty(name = "storage.provider", havingValue = "s3")
@@ -27,13 +32,33 @@ public class S3StorageService implements FileStorageService {
     private final S3Client s3Client;
     private final String bucketName;
 
-    public S3StorageService(S3Client s3Client,
-            @Value("${aws.s3.bucket.name}") String bucketName) {
+    public S3StorageService(S3Client s3Client, AwsStorageProperties awsStorageProperties) {
         this.s3Client = s3Client;
-        if (!StringUtils.hasText(bucketName)) {
+        String configuredBucket = awsStorageProperties.getBucketName();
+        if (!StringUtils.hasText(configuredBucket)) {
             throw new IllegalStateException("aws.s3.bucket.name es obligatorio cuando storage.provider=s3");
         }
-        this.bucketName = bucketName;
+        this.bucketName = configuredBucket;
+    }
+
+    @Override
+    public List<String> listPublicUrls(String folder) throws IOException {
+        String sanitizedFolder = StorageKeyUtils.sanitizeFolder(folder, folder);
+        String prefix = sanitizedFolder.endsWith("/") ? sanitizedFolder : sanitizedFolder + "/";
+        try {
+            ListObjectsV2Request request = ListObjectsV2Request.builder()
+                    .bucket(bucketName)
+                    .prefix(prefix)
+                    .build();
+            ListObjectsV2Response response = s3Client.listObjectsV2(request);
+            return response.contents().stream()
+                    .map(S3Object::key)
+                    .filter(key -> !key.endsWith("/"))
+                    .map(key -> s3Client.utilities().getUrl(builder -> builder.bucket(bucketName).key(key)).toExternalForm())
+                    .toList();
+        } catch (Exception ex) {
+            throw new IOException("Error al listar objetos S3 para la carpeta " + sanitizedFolder, ex);
+        }
     }
 
     @Override

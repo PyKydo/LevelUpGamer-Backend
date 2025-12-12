@@ -38,12 +38,6 @@ public class BoletaService {
     private final PuntosService puntosService;
     private final CuponService cuponService;
 
-        /**
-         * Crea una boleta completa (cabecera + detalles) en una sola transacción.
-         *
-         * @param request payload recibido desde el frontend.
-         * @return Boleta creada como DTO.
-         */
         @Transactional
         public BoletaRespuestaDTO crearBoleta(BoletaCrearRequest request) {
         Objects.requireNonNull(request, "La boleta no puede ser nula");
@@ -65,12 +59,6 @@ public class BoletaService {
         return respuesta;
         }
 
-    /**
-     * Crea una boleta a partir de un DTO interno.
-     *
-     * @param dto DTO con los datos de la boleta.
-     * @return DTO con la respuesta de la boleta creada.
-     */
     @Transactional
     public BoletaRespuestaDTO crearBoletaInterna(BoletaCrearDTO dto) {
         Objects.requireNonNull(dto, "La boleta no puede ser nula");
@@ -110,9 +98,6 @@ public class BoletaService {
         return BoletaMapper.toDTO(boleta);
     }
 
-    /**
-     * Lista todas las boletas del sistema. Uso restringido a administración.
-     */
     @Transactional(readOnly = true)
     public List<BoletaRespuestaDTO> listarTodas() {
         return boletaRepository.findAll().stream()
@@ -120,12 +105,6 @@ public class BoletaService {
                 .collect(Collectors.toList());
     }
 
-    /**
-     * Lista las boletas de un usuario específico.
-     *
-     * @param usuarioId ID del usuario.
-     * @return Lista de boletas del usuario.
-     */
     @Transactional(readOnly = true)
     public List<BoletaRespuestaDTO> listarBoletasPorUsuario(Long usuarioId) {
         Objects.requireNonNull(usuarioId, "El id de usuario no puede ser nulo");
@@ -134,12 +113,6 @@ public class BoletaService {
                 .collect(Collectors.toList());
     }
 
-    /**
-     * Busca una boleta por su ID.
-     *
-     * @param id ID de la boleta.
-     * @return Optional con la boleta si existe.
-     */
     @Transactional(readOnly = true)
     public Optional<Boleta> buscarPorId(Long id) {
         Objects.requireNonNull(id, "El id de la boleta no puede ser nulo");

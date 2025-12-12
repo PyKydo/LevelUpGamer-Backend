@@ -60,8 +60,8 @@ final class StorageKeyUtils {
         }
         String normalized = Normalizer.normalize(raw, Normalizer.Form.NFD)
                 .replaceAll("\\p{InCombiningDiacriticalMarks}+", "");
-        normalized = normalized.replace(' ', '-').toLowerCase(Locale.ROOT);
-        normalized = normalized.replaceAll("[^a-z0-9\\-_]", "-");
+        normalized = normalized.replace(' ', '-');
+        normalized = normalized.replaceAll("[^A-Za-z0-9\\-_]", "-");
         normalized = normalized.replaceAll("-{2,}", "-");
         return trimDashes(normalized);
     }

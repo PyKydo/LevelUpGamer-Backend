@@ -22,6 +22,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.util.StringUtils;
 
 @Service
 @RequiredArgsConstructor
@@ -80,11 +81,12 @@ public class ProductoService {
         producto.setVendedor(resolveCurrentUser(authentication));
 
         if (imagen != null && !imagen.isEmpty()) {
-                String imageUrl = fileStorageService.uploadFile(
+            String folder = PRODUCT_IMAGE_FOLDER + "/" + request.getCodigo();
+            String imageUrl = fileStorageService.uploadFile(
                     imagen.getInputStream(),
                     imagen.getOriginalFilename(),
                     imagen.getSize(),
-                    PRODUCT_IMAGE_FOLDER,
+                    folder,
                     imagen.getContentType());
             producto.setImagenes(Collections.singletonList(imageUrl));
         } else if (producto.getImagenes() == null) {
@@ -135,6 +137,12 @@ public class ProductoService {
         return productoRepository.findTop5ByActivoTrueOrderByPuntosLevelUpDesc().stream()
                 .map(ProductoMapper::toDTO)
                 .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public Optional<List<String>> listarAssets(Long id) {
+        return productoRepository.findById(id)
+            .map(this::fetchAssetsForProduct);
     }
 
     @Transactional
@@ -256,5 +264,16 @@ public class ProductoService {
             }
         }
         return false;
+    }
+
+    private List<String> fetchAssetsForProduct(Producto producto) {
+        try {
+            if (producto == null || !StringUtils.hasText(producto.getCodigo())) {
+                return Collections.emptyList();
+            }
+            return fileStorageService.listPublicUrls(PRODUCT_IMAGE_FOLDER + "/" + producto.getCodigo());
+        } catch (IOException e) {
+            throw new IllegalStateException("No se pudieron listar los assets del producto " + producto.getCodigo(), e);
+        }
     }
 }

@@ -7,7 +7,11 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.time.LocalDate;
+import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -20,13 +24,32 @@ public class LocalFileStorageService implements FileStorageService {
 
     private final Path basePath;
     private final String publicPrefix;
+    private final String publicBaseUrl;
 
-    public LocalFileStorageService(
-            @Value("${storage.local.base-path:s3-files/uploads}") String basePath,
-            @Value("${storage.local.public-url-prefix:/uploads/}") String publicPrefix) throws IOException {
+        public LocalFileStorageService(
+            @Value("${storage.local.base-path:s3-files}") String basePath,
+            @Value("${storage.local.public-url-prefix:/uploads/}") String publicPrefix,
+            @Value("${app.storage.local-base-url:}") String publicBaseUrl) throws IOException {
         this.basePath = Paths.get(basePath).toAbsolutePath().normalize();
         Files.createDirectories(this.basePath);
         this.publicPrefix = normalizePrefix(publicPrefix);
+        this.publicBaseUrl = normalizeBaseUrl(publicBaseUrl);
+    }
+
+    @Override
+    public List<String> listPublicUrls(String folder) throws IOException {
+        String sanitizedFolder = StorageKeyUtils.sanitizeFolder(folder, folder);
+        Path targetFolderPath = basePath.resolve(sanitizedFolder).normalize();
+        if (!targetFolderPath.startsWith(basePath) || !Files.exists(targetFolderPath)) {
+            return Collections.emptyList();
+        }
+        try (Stream<Path> stream = Files.list(targetFolderPath)) {
+            return stream.filter(Files::isRegularFile)
+                    .sorted()
+                    .map(path -> sanitizedFolder + "/" + path.getFileName())
+                    .map(this::buildPublicUrl)
+                    .collect(Collectors.toList());
+        }
     }
 
     @Override
@@ -39,7 +62,7 @@ public class LocalFileStorageService implements FileStorageService {
         String fileName = StorageKeyUtils.shortUuid() + "_" + StorageKeyUtils.sanitizeFileName(originalFileName);
         Path destination = targetFolderPath.resolve(fileName);
         Files.copy(inputStream, destination, StandardCopyOption.REPLACE_EXISTING);
-        return publicPrefix + targetFolder + "/" + fileName;
+        return buildPublicUrl(targetFolder + "/" + fileName);
     }
 
     @Override
@@ -90,6 +113,12 @@ public class LocalFileStorageService implements FileStorageService {
     }
 
     private String extractRelativePath(String value) {
+        if (StringUtils.hasText(publicBaseUrl)) {
+            String absolutePrefix = publicBaseUrl + publicPrefix;
+            if (value.startsWith(absolutePrefix)) {
+                return value.substring(absolutePrefix.length());
+            }
+        }
         if (value.startsWith(publicPrefix)) {
             return value.substring(publicPrefix.length());
         }
@@ -117,5 +146,23 @@ public class LocalFileStorageService implements FileStorageService {
             normalized = normalized + "/";
         }
         return normalized;
+    }
+
+    private String normalizeBaseUrl(String baseUrl) {
+        if (!StringUtils.hasText(baseUrl)) {
+            return null;
+        }
+        String normalized = baseUrl.trim();
+        while (normalized.endsWith("/")) {
+            normalized = normalized.substring(0, normalized.length() - 1);
+        }
+        return normalized;
+    }
+
+    private String buildPublicUrl(String relativePath) {
+        if (StringUtils.hasText(publicBaseUrl)) {
+            return publicBaseUrl + publicPrefix + relativePath;
+        }
+        return publicPrefix + relativePath;
     }
 }

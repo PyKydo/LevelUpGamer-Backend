@@ -7,8 +7,19 @@ import com.levelupgamer.productos.categorias.CategoriaRepository;
 import com.levelupgamer.usuarios.RolUsuario;
 import com.levelupgamer.usuarios.Usuario;
 import com.levelupgamer.usuarios.UsuarioRepository;
+import java.io.IOException;
 import java.math.BigDecimal;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Collections;
+import java.util.List;
+import java.util.Locale;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.core.annotation.Order;
@@ -22,23 +33,44 @@ import org.springframework.util.StringUtils;
 @Order(2)
 public class ProductDataInitializer implements CommandLineRunner {
 
+        private static final Logger log = LoggerFactory.getLogger(ProductDataInitializer.class);
+        private static final Set<String> SUPPORTED_IMAGE_EXTENSIONS = Set.of("jpg", "jpeg", "png", "gif", "bmp", "webp", "avif");
+
         private final ProductoRepository productoRepository;
         private final CategoriaRepository categoriaRepository;
         private final UsuarioRepository usuarioRepository;
-
-        @Value("${aws.s3.bucket.url:}")
-        private String s3BucketUrl;
+        private final AwsStorageProperties awsStorageProperties;
+        private final Path localProductAssetsBasePath;
+        private final String localUploadsPrefix;
+        private final String localBaseUrl;
 
         public ProductDataInitializer(ProductoRepository productoRepository, CategoriaRepository categoriaRepository,
-                        UsuarioRepository usuarioRepository) {
+                        UsuarioRepository usuarioRepository,
+                        AwsStorageProperties awsStorageProperties,
+                        @Value("${storage.local.base-path:${user.dir}/s3-files}") String localBasePath,
+                        @Value("${storage.local.public-url-prefix:/uploads/}") String localPublicPrefix,
+                        @Value("${app.storage.local-base-url:}") String configuredLocalBaseUrl) {
                 this.productoRepository = productoRepository;
                 this.categoriaRepository = categoriaRepository;
                 this.usuarioRepository = usuarioRepository;
+                this.awsStorageProperties = awsStorageProperties;
+                this.localProductAssetsBasePath = Paths.get(localBasePath).toAbsolutePath().normalize().resolve("products");
+                this.localUploadsPrefix = normalizePrefix(localPublicPrefix);
+                this.localBaseUrl = trimTrailingSlash(configuredLocalBaseUrl);
+                try {
+                        Files.createDirectories(this.localProductAssetsBasePath);
+                } catch (IOException ex) {
+                        throw new IllegalStateException("No se pudo preparar el directorio local de productos seed", ex);
+                }
         }
 
     @Override
     @Transactional
     public void run(String... args) throws Exception {
+                boolean normalizedLocalImages = ensureLocalImageConvention();
+                if (normalizedLocalImages) {
+                        System.out.println(">>> Se normalizaron las URLs locales de imágenes de productos para usar el prefijo configurado. <<<");
+                }
         if (productoRepository.count() == 0) {
             createProducts();
             System.out.println(">>> Productos de prueba creados exitosamente! <<<");
@@ -77,7 +109,7 @@ public class ProductDataInitializer implements CommandLineRunner {
                 .stockCritico(5)
                 .categoria(juegosMesa)
                 .puntosLevelUp(200)
-                .imagenes(Collections.singletonList(buildProductImage("JM001-catan.webp")))
+                .imagenes(buildSeedImagesForProduct("JM001", "JM001-catan"))
                 .activo(true)
                 .vendedor(levelUpVendor)
                 .build();
@@ -93,7 +125,7 @@ public class ProductDataInitializer implements CommandLineRunner {
                 .stockCritico(4)
                 .categoria(juegosMesa)
                 .puntosLevelUp(200)
-                .imagenes(Collections.singletonList(buildProductImage("JM002-carcassonne.webp")))
+                .imagenes(buildSeedImagesForProduct("JM002", "JM002-carcassonne"))
                 .activo(true)
                 .vendedor(levelUpVendor)
                 .build();
@@ -109,7 +141,7 @@ public class ProductDataInitializer implements CommandLineRunner {
                 .stockCritico(3)
                 .categoria(accesorios)
                 .puntosLevelUp(300)
-                .imagenes(Collections.singletonList(buildProductImage("AC001-xbox-controller.webp")))
+                .imagenes(buildSeedImagesForProduct("AC001", "AC001-xbox-controller"))
                 .activo(true)
                 .vendedor(levelUpVendor)
                 .build();
@@ -125,7 +157,7 @@ public class ProductDataInitializer implements CommandLineRunner {
             .stockCritico(2)
             .categoria(accesorios)
             .puntosLevelUp(400)
-            .imagenes(Collections.singletonList(buildProductImage("AC002-hyperx-cloud.webp")))
+            .imagenes(buildSeedImagesForProduct("AC002", "AC002-hyperx-cloud"))
             .activo(true)
             .vendedor(levelUpVendor)
             .build();
@@ -141,7 +173,7 @@ public class ProductDataInitializer implements CommandLineRunner {
                 .stockCritico(1)
                 .categoria(consolas)
                 .puntosLevelUp(800)
-                .imagenes(Collections.singletonList(buildProductImage("CQ001-ps5.webp")))
+                .imagenes(buildSeedImagesForProduct("CQ001", "CQ001-ps5"))
                 .activo(true)
                 .vendedor(levelUpVendor)
                 .build();
@@ -157,7 +189,7 @@ public class ProductDataInitializer implements CommandLineRunner {
                 .stockCritico(1)
                 .categoria(computadores)
                 .puntosLevelUp(1000)
-                .imagenes(Collections.singletonList(buildProductImage("CG001-asus-rog.webp")))
+                .imagenes(buildSeedImagesForProduct("CG001", "CG001-asus-rog"))
                 .activo(true)
                 .vendedor(levelUpVendor)
                 .build();
@@ -173,7 +205,7 @@ public class ProductDataInitializer implements CommandLineRunner {
                 .stockCritico(1)
                 .categoria(sillas)
                 .puntosLevelUp(300)
-                .imagenes(Collections.singletonList(buildProductImage("SG001-secretlab-titan.webp")))
+                .imagenes(buildSeedImagesForProduct("SG001", "SG001-secretlab-titan"))
                 .activo(true)
                 .vendedor(levelUpVendor)
                 .build();
@@ -189,7 +221,7 @@ public class ProductDataInitializer implements CommandLineRunner {
                 .stockCritico(3)
                 .categoria(mouse)
                 .puntosLevelUp(200)
-                .imagenes(Collections.singletonList(buildProductImage("MS001-logitech-g502.webp")))
+                .imagenes(buildSeedImagesForProduct("MS001", "MS001-logitech-g502"))
                 .activo(true)
                 .vendedor(levelUpVendor)
                 .build();
@@ -205,7 +237,7 @@ public class ProductDataInitializer implements CommandLineRunner {
                 .stockCritico(5)
                 .categoria(mousepad)
                 .puntosLevelUp(100)
-                .imagenes(Collections.singletonList(buildProductImage("MP001-razer-goliathus.webp")))
+                .imagenes(buildSeedImagesForProduct("MP001", "MP001-razer-goliathus"))
                 .activo(true)
                 .vendedor(levelUpVendor)
                 .build();
@@ -221,21 +253,157 @@ public class ProductDataInitializer implements CommandLineRunner {
                 .stockCritico(8)
                 .categoria(poleras)
                 .puntosLevelUp(100)
-                .imagenes(Collections.singletonList(buildProductImage("PP001-levelup-tshirt.webp")))
+                .imagenes(buildSeedImagesForProduct("PP001", "PP001-levelup-tshirt"))
                 .activo(true)
                 .vendedor(levelUpVendor)
                 .build();
         productoRepository.save(pp001);
     }
 
-    private String buildProductImage(String fileName) {
-        if (StringUtils.hasText(s3BucketUrl)) {
-            String base = s3BucketUrl.endsWith("/") ? s3BucketUrl.substring(0, s3BucketUrl.length() - 1) : s3BucketUrl;
-            return base + "/products/" + fileName;
+        private List<String> buildSeedImagesForProduct(String productCode, String placeholderSeed) {
+                List<String> assetNames = collectLocalAssetNames(productCode);
+                if (!assetNames.isEmpty()) {
+                        if (awsStorageProperties.hasBucketConfigured()) {
+                                String bucketBase = resolveBucketBaseUrl();
+                                return assetNames.stream()
+                                                .map(name -> bucketBase + "products/" + productCode + "/" + name)
+                                                .toList();
+                        }
+                        return assetNames.stream()
+                                        .map(name -> buildLocalUrl("products/" + productCode + "/" + name))
+                                        .toList();
+                }
+                return Collections.singletonList(buildPlaceholderImage(placeholderSeed));
         }
-        String seed = fileName.replace('.', '-');
-        return "https://picsum.photos/seed/levelup-" + seed + "/800/800";
-    }
+
+        private List<String> collectLocalAssetNames(String productCode) {
+                Path productDir = localProductAssetsBasePath.resolve(productCode);
+                if (!Files.exists(productDir)) {
+                        return Collections.emptyList();
+                }
+                try (Stream<Path> stream = Files.list(productDir)) {
+                        return stream.filter(Files::isRegularFile)
+                                        .map(path -> path.getFileName().toString())
+                                        .filter(this::isSupportedImage)
+                                        .sorted()
+                                        .toList();
+                } catch (IOException ex) {
+                        log.warn("No se pudieron leer los assets locales de {}: {}", productCode, ex.getMessage());
+                        return Collections.emptyList();
+                }
+        }
+
+        private boolean isSupportedImage(String fileName) {
+                int dot = fileName.lastIndexOf('.') + 1;
+                if (dot <= 0 || dot >= fileName.length()) {
+                        return false;
+                }
+                String extension = fileName.substring(dot).toLowerCase(Locale.ROOT);
+                return SUPPORTED_IMAGE_EXTENSIONS.contains(extension);
+        }
+
+        private String resolveBucketBaseUrl() {
+                String bucketUrl = awsStorageProperties.getBucketUrl();
+                if (StringUtils.hasText(bucketUrl)) {
+                        return bucketUrl.endsWith("/") ? bucketUrl : bucketUrl + "/";
+                }
+                String bucketName = awsStorageProperties.getBucketName();
+                return "https://" + bucketName + ".s3.amazonaws.com/";
+        }
+
+        private String buildPlaceholderImage(String seed) {
+                String sanitized = seed.replaceAll("[^A-Za-z0-9]", "");
+                if (!StringUtils.hasText(sanitized)) {
+                        sanitized = "default";
+                }
+                return "https://picsum.photos/seed/levelup-" + sanitized.toLowerCase(Locale.ROOT) + "/800/800";
+        }
+
+        private String normalizePrefix(String prefix) {
+                String normalized = prefix;
+                if (!normalized.startsWith("/")) {
+                        normalized = "/" + normalized;
+                }
+                if (!normalized.endsWith("/")) {
+                        normalized = normalized + "/";
+                }
+                return normalized;
+        }
+
+        private String trimTrailingSlash(String value) {
+                if (!StringUtils.hasText(value)) {
+                        return null;
+                }
+                String normalized = value.trim();
+                while (normalized.endsWith("/")) {
+                        normalized = normalized.substring(0, normalized.length() - 1);
+                }
+                return normalized;
+        }
+
+        private String buildLocalUrl(String relativePath) {
+                if (StringUtils.hasText(localBaseUrl)) {
+                        return localBaseUrl + localUploadsPrefix + relativePath;
+                }
+                return localUploadsPrefix + relativePath;
+        }
+
+        private boolean ensureLocalImageConvention() {
+                if (awsStorageProperties.hasBucketConfigured()) {
+                        return false;
+                }
+                boolean updatedAny = false;
+                for (Producto producto : productoRepository.findAll()) {
+                        List<String> imagenes = producto.getImagenes();
+                        if (imagenes == null || imagenes.isEmpty()) {
+                                continue;
+                        }
+                        List<String> normalizadas = imagenes.stream()
+                                        .map(this::normalizeLocalImageUrl)
+                                        .collect(Collectors.toList());
+                        if (!normalizadas.equals(imagenes)) {
+                                producto.setImagenes(normalizadas);
+                                productoRepository.save(producto);
+                                updatedAny = true;
+                        }
+                }
+                return updatedAny;
+        }
+
+        private String normalizeLocalImageUrl(String original) {
+                if (!StringUtils.hasText(original)) {
+                        return original;
+                }
+                String trimmed = original.trim();
+                if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) {
+                        return original;
+                }
+                String relativePath = extractRelativeProductPath(trimmed);
+                if (!StringUtils.hasText(relativePath)) {
+                        return original;
+                }
+                return buildLocalUrl(relativePath);
+        }
+
+        private String extractRelativeProductPath(String url) {
+                String withoutBase = stripLocalBaseUrl(url);
+                String normalized = withoutBase.replace("\\", "/");
+                int index = normalized.indexOf("products/");
+                if (index >= 0) {
+                        return normalized.substring(index);
+                }
+                return null;
+        }
+
+        private String stripLocalBaseUrl(String value) {
+                if (!StringUtils.hasText(value) || !StringUtils.hasText(localBaseUrl)) {
+                        return value;
+                }
+                if (value.startsWith(localBaseUrl)) {
+                        return value.substring(localBaseUrl.length());
+                }
+                return value;
+        }
 
         @SuppressWarnings("null")
         private Usuario resolveLevelUpVendor() {

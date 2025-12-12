@@ -4,6 +4,7 @@ import com.levelupgamer.contenido.dto.BlogDTO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import java.io.IOException;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -72,6 +73,13 @@ public class BlogService {
         return blogRepository.findById(id);
     }
 
+    @Transactional(readOnly = true)
+    public Optional<List<String>> listarAssets(Long id) {
+        Objects.requireNonNull(id, "id es obligatorio");
+        return blogRepository.findById(id)
+                .map(blog -> fetchAssetsForBlog(blog.getId()));
+    }
+
     public BlogDTO toDTO(Blog blog) {
         return BlogDTO.builder()
                 .id(blog.getId())
@@ -83,5 +91,13 @@ public class BlogService {
                 .imagenUrl(blog.getImagenUrl())
                 .altImagen(blog.getAltImagen())
                 .build();
+    }
+
+    private List<String> fetchAssetsForBlog(Long blogId) {
+        try {
+            return storageService.listPublicUrls(BLOG_IMAGE_FOLDER + "/" + blogId);
+        } catch (IOException e) {
+            throw new IllegalStateException("No se pudieron listar los assets del blog " + blogId, e);
+        }
     }
 }
