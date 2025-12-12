@@ -1,58 +1,47 @@
 package com.levelupgamer.config;
 
 import com.levelupgamer.contenido.Blog;
+import com.levelupgamer.contenido.BlogAssetStorageService;
 import com.levelupgamer.contenido.BlogRepository;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDate;
-
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.StringUtils;
-
 
 @Component
 @Profile("!test")
 public class BlogDataInitializer implements CommandLineRunner {
 
     private final BlogRepository blogRepository;
-    private final AwsStorageProperties awsStorageProperties;
-    private final Path localMarkdownBasePath;
-    private final String localUploadsPrefix;
-    private final String localBaseUrl;
+    private final BlogAssetStorageService blogAssetStorageService;
+    private final Path seedBasePath;
 
-    public BlogDataInitializer(BlogRepository blogRepository,
-            AwsStorageProperties awsStorageProperties,
-            @Value("${blog.seed.local-markdown-dir:${user.dir}/s3-files/blogs}") String localMarkdownDir,
-            @Value("${storage.local.public-url-prefix:/uploads/}") String localPublicPrefix,
-            @Value("${app.storage.local-base-url:}") String configuredLocalBaseUrl) {
+    public BlogDataInitializer(
+            BlogRepository blogRepository,
+            BlogAssetStorageService blogAssetStorageService,
+            @Value("${blog.seed.local-markdown-dir:${user.dir}/s3-files/blogs}") String seedDir) {
         this.blogRepository = blogRepository;
-        this.awsStorageProperties = awsStorageProperties;
-        this.localMarkdownBasePath = Paths.get(localMarkdownDir).toAbsolutePath().normalize();
-        this.localUploadsPrefix = normalizePrefix(localPublicPrefix);
-        this.localBaseUrl = trimTrailingSlash(configuredLocalBaseUrl);
+        this.blogAssetStorageService = blogAssetStorageService;
+        this.seedBasePath = Paths.get(seedDir).toAbsolutePath().normalize();
         try {
-            Files.createDirectories(this.localMarkdownBasePath);
+            Files.createDirectories(this.seedBasePath);
         } catch (IOException ex) {
-            throw new IllegalStateException("No se pudo crear el directorio local para blogs seed", ex);
+            throw new IllegalStateException("No se pudo preparar el directorio de seeds para blogs", ex);
         }
     }
 
     @Override
     @Transactional
-    public void run(String... args) throws Exception {
-        boolean updated = ensureS3PathConvention();
-        if (updated) {
-            System.out.println(">>> Se actualizaron las rutas S3 de blogs existentes para utilizar blogs/{id}. <<<");
-        }
-        boolean localUpdated = ensureLocalPathConvention();
-        if (localUpdated) {
-            System.out.println(">>> Se actualizaron las rutas locales de blogs existentes para apuntar a /uploads/blogs/{id}. <<<");
+    public void run(String... args) {
+        boolean synced = sincronizarAssetsExistentes();
+        if (synced) {
+            System.out.println(">>> Se sincronizaron los assets de blogs con el proveedor de almacenamiento configurado. <<<");
         }
         if (blogRepository.count() == 0) {
             createBlogs();
@@ -64,196 +53,79 @@ public class BlogDataInitializer implements CommandLineRunner {
 
     @SuppressWarnings("null")
     private void createBlogs() {
-        // Blog 1
         Blog blog1 = Blog.builder()
-            .titulo("Los videojuegos más influyentes de la historia")
-            .autor("Matías Gutiérrez")
-            .fechaPublicacion(LocalDate.now())
-            .descripcionCorta("Un repaso por los títulos que definieron generaciones enteras.")
-            .altImagen("Collage de videojuegos icónicos que marcaron la industria.")
+                .titulo("Los videojuegos más influyentes de la historia")
+                .autor("Matías Gutiérrez")
+                .fechaPublicacion(LocalDate.now())
+                .descripcionCorta("Un repaso por los títulos que definieron generaciones enteras.")
+                .altImagen("Collage de videojuegos icónicos que marcaron la industria.")
                 .build();
-        persistWithAssetUrls(blog1);
+        persistWithAssets(blog1);
 
-        // Blog 2
         Blog blog2 = Blog.builder()
-            .titulo("PC gamer definitiva 2025: Guía de hardware y presupuesto")
+                .titulo("PC gamer definitiva 2025: Guía de hardware y presupuesto")
                 .autor("Victor Mena")
                 .fechaPublicacion(LocalDate.now().minusDays(5))
-            .descripcionCorta("Componentes recomendados y configuraciones equilibradas para este año.")
-            .altImagen("Componentes modernos de PC gamer dispuestos sobre una mesa iluminada.")
+                .descripcionCorta("Componentes recomendados y configuraciones equilibradas para este año.")
+                .altImagen("Componentes modernos de PC gamer dispuestos sobre una mesa iluminada.")
                 .build();
-            persistWithAssetUrls(blog2);
+        persistWithAssets(blog2);
 
-        // Blog 3
         Blog blog3 = Blog.builder()
-            .titulo("Cómo entrenar como un pro: Estrategias para subir de rango")
+                .titulo("Cómo entrenar como un pro: Estrategias para subir de rango")
                 .autor("David Larenas")
                 .fechaPublicacion(LocalDate.now().minusDays(10))
-            .descripcionCorta("Técnicas mentales y mecánicas para destacar en competitivo.")
-            .altImagen("Jugador profesional concentrado frente a su setup competitivo.")
+                .descripcionCorta("Técnicas mentales y mecánicas para destacar en competitivo.")
+                .altImagen("Jugador profesional concentrado frente a su setup competitivo.")
                 .build();
-            persistWithAssetUrls(blog3);
+        persistWithAssets(blog3);
     }
 
-    private boolean ensureS3PathConvention() {
-        if (!awsStorageProperties.hasBucketConfigured()) {
-            return false;
-        }
-        String bucketName = awsStorageProperties.getBucketName();
-        String prefix = "https://" + bucketName + ".s3.amazonaws.com/blogs/";
-        boolean updatedAny = false;
-        for (Blog blog : blogRepository.findAll()) {
-            boolean updated = false;
-            if (needsS3Fix(blog.getContenidoUrl(), prefix, blog.getId())) {
-                blog.setContenidoUrl(buildContentUrl(blog.getId()));
-                updated = true;
-            }
-            if (needsS3Fix(blog.getImagenUrl(), prefix, blog.getId())) {
-                blog.setImagenUrl(buildImageUrl(blog.getId()));
-                updated = true;
-            }
-            if (updated) {
-                blogRepository.save(blog);
-                updatedAny = true;
-            }
-        }
-        return updatedAny;
-    }
-
-    private boolean ensureLocalPathConvention() {
-        if (awsStorageProperties.hasBucketConfigured()) {
-            return false;
-        }
-        boolean updatedAny = false;
-        for (Blog blog : blogRepository.findAll()) {
-            boolean updated = false;
-            if (needsLocalFix(blog.getContenidoUrl())) {
-                blog.setContenidoUrl(buildContentUrl(blog.getId()));
-                updated = true;
-            }
-            if (needsLocalFix(blog.getImagenUrl())) {
-                blog.setImagenUrl(buildImageUrl(blog.getId()));
-                updated = true;
-            }
-            if (updated) {
-                blogRepository.save(blog);
-                updatedAny = true;
-            }
-        }
-        return updatedAny;
-    }
-
-    private boolean needsS3Fix(String url, String prefix, Long blogId) {
-        if (!StringUtils.hasText(url) || blogId == null) {
-            return false;
-        }
-        return url.startsWith(prefix) && !url.startsWith(prefix + blogId + "/");
-    }
-
-    private boolean needsLocalFix(String url) {
-        if (!StringUtils.hasText(url)) {
-            return false;
-        }
-        String trimmed = url.trim();
-        if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) {
-            return false;
-        }
-        if (trimmed.startsWith("file:" ) || trimmed.startsWith("local://")) {
-            return true;
-        }
-        String withoutBase = stripLocalBaseUrl(trimmed);
-        if (withoutBase.startsWith(localUploadsPrefix)) {
-            return false;
-        }
-        if (withoutBase.startsWith("/")) {
-            withoutBase = withoutBase.substring(1);
-        }
-        if (withoutBase.startsWith("uploads/")) {
-            return true;
-        }
-        return withoutBase.startsWith("blogs/");
-    }
-
-    @SuppressWarnings("null")
-    private void persistWithAssetUrls(Blog blog) {
+    private void persistWithAssets(Blog blog) {
         Blog persisted = blogRepository.save(blog);
-        persisted.setContenidoUrl(buildContentUrl(persisted.getId()));
-        persisted.setImagenUrl(buildImageUrl(persisted.getId()));
-        
-        blogRepository.save(persisted);
-    }
-
-    private String buildContentUrl(Long blogId) {
-        if (awsStorageProperties.hasBucketConfigured() && blogId != null) {
-            String bucketName = awsStorageProperties.getBucketName();
-            return "https://" + bucketName + ".s3.amazonaws.com/blogs/" + blogId + "/blog.md";
-        }
-        Path target = localMarkdownBasePath.resolve(String.valueOf(blogId)).resolve("blog.md");
-        ensureFolderExists(target.getParent());
-        return buildLocalUrl("blogs/" + blogId + "/blog.md");
-    }
-
-    private String buildImageUrl(Long blogId) {
-        if (awsStorageProperties.hasBucketConfigured() && blogId != null) {
-            String bucketName = awsStorageProperties.getBucketName();
-            return "https://" + bucketName + ".s3.amazonaws.com/blogs/" + blogId + "/blog.jpg";
-        }
-        Path target = localMarkdownBasePath.resolve(String.valueOf(blogId)).resolve("blog.jpg");
-        ensureFolderExists(target.getParent());
-        if (Files.exists(target)) {
-            return buildLocalUrl("blogs/" + blogId + "/blog.jpg");
-        }
-        return "https://picsum.photos/seed/levelupgamer-" + blogId + "/1200/600";
-    }
-
-    private void ensureFolderExists(Path folder) {
-        if (folder == null) {
-            return;
-        }
-        try {
-            Files.createDirectories(folder);
-        } catch (IOException ex) {
-            throw new IllegalStateException("No se pudo preparar el directorio de blogs seed", ex);
+        if (syncAssetsForBlog(persisted)) {
+            blogRepository.save(persisted);
         }
     }
 
-    private String buildLocalUrl(String relativePath) {
-        if (StringUtils.hasText(localBaseUrl)) {
-            return localBaseUrl + localUploadsPrefix + relativePath;
+    private boolean sincronizarAssetsExistentes() {
+        boolean updatedAny = false;
+        for (Blog blog : blogRepository.findAll()) {
+            if (syncAssetsForBlog(blog)) {
+                blogRepository.save(blog);
+                updatedAny = true;
+            }
         }
-        return localUploadsPrefix + relativePath;
+        return updatedAny;
     }
 
-    private String stripLocalBaseUrl(String value) {
-        if (!StringUtils.hasText(value) || !StringUtils.hasText(localBaseUrl)) {
-            return value;
+    private boolean syncAssetsForBlog(Blog blog) {
+        if (blog.getId() == null) {
+            return false;
         }
-        if (value.startsWith(localBaseUrl)) {
-            return value.substring(localBaseUrl.length());
-        }
-        return value;
-    }
+        Path blogDir = seedBasePath.resolve(String.valueOf(blog.getId()));
+        boolean updated = false;
 
-    private String normalizePrefix(String prefix) {
-        String normalized = prefix;
-        if (!normalized.startsWith("/")) {
-            normalized = "/" + normalized;
+        Path markdown = blogDir.resolve("blog.md");
+        if (Files.exists(markdown)) {
+            String contenidoUrl = blogAssetStorageService.storeSeedMarkdown(blog.getId(), markdown)
+                    .orElse(null);
+            if (contenidoUrl != null && !contenidoUrl.equals(blog.getContenidoUrl())) {
+                blog.setContenidoUrl(contenidoUrl);
+                updated = true;
+            }
         }
-        if (!normalized.endsWith("/")) {
-            normalized = normalized + "/";
-        }
-        return normalized;
-    }
 
-    private String trimTrailingSlash(String value) {
-        if (!StringUtils.hasText(value)) {
-            return null;
+        Path imagen = blogDir.resolve("blog.jpg");
+        if (Files.exists(imagen)) {
+            String imagenUrl = blogAssetStorageService.storeSeedImage(blog.getId(), imagen)
+                    .orElse(null);
+            if (imagenUrl != null && !imagenUrl.equals(blog.getImagenUrl())) {
+                blog.setImagenUrl(imagenUrl);
+                updated = true;
+            }
         }
-        String normalized = value.trim();
-        while (normalized.endsWith("/")) {
-            normalized = normalized.substring(0, normalized.length() - 1);
-        }
-        return normalized;
-    }
 
+        return updated;
+    }
 }

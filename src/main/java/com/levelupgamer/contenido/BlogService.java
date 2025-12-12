@@ -1,7 +1,6 @@
 package com.levelupgamer.contenido;
 
 import com.levelupgamer.contenido.dto.BlogDTO;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.io.IOException;
@@ -10,14 +9,16 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import lombok.RequiredArgsConstructor;
+
 @Service
+@RequiredArgsConstructor
 public class BlogService {
     private static final String BLOG_IMAGE_FOLDER = "blogs";
-    @Autowired
-    private BlogRepository blogRepository;
 
-    @Autowired
-    private com.levelupgamer.common.storage.FileStorageService storageService;
+    private final BlogRepository blogRepository;
+    private final com.levelupgamer.common.storage.FileStorageService storageService;
+    private final BlogAssetStorageService blogAssetStorageService;
 
     @Transactional(readOnly = true)
     public List<BlogDTO> listarBlogs() {
@@ -27,20 +28,26 @@ public class BlogService {
     }
 
     @Transactional
-    public BlogDTO crearBlog(Blog blog, org.springframework.web.multipart.MultipartFile imagen)
-            throws java.io.IOException {
-        if (imagen != null && !imagen.isEmpty()) {
-                String imageUrl = storageService.uploadFile(
-                    imagen.getInputStream(),
-                    imagen.getOriginalFilename(),
-                    imagen.getSize(),
-                    BLOG_IMAGE_FOLDER,
-                    imagen.getContentType());
-            blog.setImagenUrl(imageUrl);
-        }
+    public BlogDTO crearBlog(
+            Blog blog,
+            org.springframework.web.multipart.MultipartFile imagen,
+            org.springframework.web.multipart.MultipartFile contenido) throws java.io.IOException {
+
         blog.setFechaPublicacion(java.time.LocalDate.now());
         Blog guardado = blogRepository.save(blog);
-        return toDTO(guardado);
+
+        if (contenido != null && !contenido.isEmpty()) {
+            String contenidoUrl = blogAssetStorageService.storeMarkdown(guardado.getId(), contenido);
+            guardado.setContenidoUrl(contenidoUrl);
+        }
+
+        if (imagen != null && !imagen.isEmpty()) {
+            String imageUrl = blogAssetStorageService.storeImage(guardado.getId(), imagen);
+            guardado.setImagenUrl(imageUrl);
+        }
+
+        Blog actualizado = blogRepository.save(guardado);
+        return toDTO(actualizado);
     }
 
     @Transactional

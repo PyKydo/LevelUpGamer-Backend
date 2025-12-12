@@ -84,9 +84,10 @@ public class BlogController {
     @PostMapping(consumes = { MediaType.MULTIPART_FORM_DATA_VALUE })
     public ResponseEntity<BlogDTO> crearBlog(
             @RequestPart("blog") @jakarta.validation.Valid Blog blog,
-            @RequestPart(value = "imagen", required = false) org.springframework.web.multipart.MultipartFile imagen)
+            @RequestPart(value = "imagen", required = false) org.springframework.web.multipart.MultipartFile imagen,
+            @RequestPart(value = "contenido", required = false) org.springframework.web.multipart.MultipartFile contenido)
             throws java.io.IOException {
-        return ResponseEntity.ok(blogService.crearBlog(blog, imagen));
+        return ResponseEntity.ok(blogService.crearBlog(blog, imagen, contenido));
     }
 
     @PreAuthorize("hasRole('ADMINISTRADOR')")
