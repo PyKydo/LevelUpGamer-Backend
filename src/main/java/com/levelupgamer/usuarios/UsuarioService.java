@@ -12,8 +12,9 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Collections;
+import java.util.Arrays;
 import java.util.HashSet;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -21,6 +22,7 @@ import java.util.stream.Collectors;
 @Service
 public class UsuarioService {
     private static final int REFERRAL_POINTS = 100;
+    private static final String[] DUOC_EMAIL_DOMAINS = {"@duoc.cl", "@profesor.duoc.cl", "@duocuc.cl"};
     private final UsuarioRepository usuarioRepository;
     private final PuntosRepository puntosRepository;
     private final PuntosService puntosService;
@@ -42,7 +44,7 @@ public class UsuarioService {
         if (dto.getCorreo() == null || dto.getCorreo().trim().isEmpty()) {
             throw new IllegalArgumentException("Correo es obligatorio");
         }
-        String correo = dto.getCorreo().trim().toLowerCase();
+        String correo = dto.getCorreo().trim().toLowerCase(Locale.ROOT);
         if (correo.length() > 254) {
             throw new IllegalArgumentException("Correo demasiado largo");
         }
@@ -82,9 +84,7 @@ public class UsuarioService {
         roles.add(RolUsuario.CLIENTE);
         usuario.setRoles(roles);
         usuario.setActivo(true);
-        if (correo.endsWith("@duoc.cl") || correo.endsWith("@profesor.duoc.cl") || correo.endsWith("@duocuc.cl")) {
-            usuario.setIsDuocUser(true);
-        }
+        usuario.setIsDuocUser(esCorreoDuoc(correo));
 
         Usuario nuevoUsuario = usuarioRepository.save(usuario);
 
@@ -124,6 +124,19 @@ public class UsuarioService {
             usuario.setComuna(dto.getComuna());
         if (dto.getDireccion() != null)
             usuario.setDireccion(dto.getDireccion());
+        if (dto.getCorreo() != null) {
+            String nuevoCorreo = dto.getCorreo().trim().toLowerCase(Locale.ROOT);
+            if (nuevoCorreo.isEmpty()) {
+                throw new IllegalArgumentException("El correo no puede estar vacío");
+            }
+            usuarioRepository.findByCorreo(nuevoCorreo)
+                    .filter(existing -> !existing.getId().equals(id))
+                    .ifPresent(existing -> {
+                        throw new UserAlreadyExistsException("Correo ya registrado");
+                    });
+            usuario.setCorreo(nuevoCorreo);
+            usuario.setIsDuocUser(esCorreoDuoc(nuevoCorreo));
+        }
 
         
         
@@ -134,6 +147,13 @@ public class UsuarioService {
         usuarioRepository.save(usuario);
         PuntosDTO puntosDTO = puntosService.obtenerPuntosPorUsuario(id);
         return UsuarioMapper.toDTO(usuario, puntosDTO.getPuntosAcumulados());
+    }
+
+    private boolean esCorreoDuoc(String correo) {
+        if (correo == null) {
+            return false;
+        }
+        return Arrays.stream(DUOC_EMAIL_DOMAINS).anyMatch(correo::endsWith);
     }
 
     @Transactional(readOnly = true)

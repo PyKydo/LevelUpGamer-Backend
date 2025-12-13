@@ -87,12 +87,14 @@ class UsuarioE2ETest {
                                 .andExpect(status().isOk())
                                 .andExpect(jsonPath("$.id").value(clienteId));
 
+                String nuevoCorreo = "usuario-actualizado-" + UUID.randomUUID().toString().substring(0, 8) + "@duoc.cl";
                 UsuarioUpdateDTO updateDTO = UsuarioUpdateDTO.builder()
                                 .nombre("Usuario Actualizado")
                                 .apellidos("E2E Actualizado")
                                 .direccion("Nueva Direccion 123")
                                 .region("Metropolitana")
                                 .comuna("Providencia")
+                                .correo(nuevoCorreo)
                                 .build();
 
                 mockMvc.perform(put("/api/v1/users/" + clienteId)
@@ -101,6 +103,63 @@ class UsuarioE2ETest {
                                 .content(objectMapper.writeValueAsString(updateDTO)))
                                 .andExpect(status().isOk())
                                 .andExpect(jsonPath("$.nombre").value("Usuario Actualizado"))
-                                .andExpect(jsonPath("$.direccion").value("Nueva Direccion 123"));
+                                .andExpect(jsonPath("$.direccion").value("Nueva Direccion 123"))
+                                .andExpect(jsonPath("$.correo").value(nuevoCorreo));
+        }
+
+        @Test
+        void noDebePermitirActualizarCorreoDuplicado() throws Exception {
+                String duplicatedEmail = "usuario-duplicado-" + UUID.randomUUID().toString().substring(0, 8) + "@gmail.com";
+                Usuario otroUsuario = Usuario.builder()
+                                .run("44" + UUID.randomUUID().toString().substring(0, 8))
+                                .nombre("Duplicado")
+                                .apellidos("Test")
+                                .correo(duplicatedEmail)
+                                .contrasena(passwordEncoder.encode("duplicado123"))
+                                .fechaNacimiento(LocalDate.now().minusYears(30))
+                                .region("Metropolitana")
+                                .comuna("Santiago")
+                                .direccion("Otra Direccion 456")
+                                .roles(Set.of(RolUsuario.CLIENTE))
+                                .activo(true)
+                                .build();
+                usuarioRepository.saveAndFlush(otroUsuario);
+
+                UsuarioUpdateDTO updateDTO = UsuarioUpdateDTO.builder()
+                                .correo(duplicatedEmail)
+                                .build();
+
+                mockMvc.perform(put("/api/v1/users/" + clienteId)
+                                .header("Authorization", "Bearer " + clienteToken)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(updateDTO)))
+                                .andExpect(status().isConflict())
+                                .andExpect(jsonPath("$.error").value("Correo ya registrado"));
+        }
+
+        @Test
+        void debeRechazarActualizacionSinToken() throws Exception {
+                UsuarioUpdateDTO updateDTO = UsuarioUpdateDTO.builder()
+                                .nombre("Sin Token")
+                                .build();
+
+                mockMvc.perform(put("/api/v1/users/" + clienteId)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(updateDTO)))
+                                .andExpect(status().isForbidden());
+        }
+
+        @Test
+        void noDebePermitirActualizarCorreoConDominioNoPermitido() throws Exception {
+                UsuarioUpdateDTO updateDTO = UsuarioUpdateDTO.builder()
+                                .correo("usuario@empresa.cl")
+                                .build();
+
+                mockMvc.perform(put("/api/v1/users/" + clienteId)
+                                .header("Authorization", "Bearer " + clienteToken)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(updateDTO)))
+                                .andExpect(status().isBadRequest())
+                                .andExpect(jsonPath("$.correo").value("Dominio de correo no permitido"));
         }
 }

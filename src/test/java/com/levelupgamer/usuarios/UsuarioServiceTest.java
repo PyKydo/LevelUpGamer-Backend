@@ -68,6 +68,7 @@ class UsuarioServiceTest {
         usuario.setFechaNacimiento(LocalDate.now().minusYears(25));
         usuario.setRoles(Set.of(RolUsuario.CLIENTE));
         usuario.setActivo(true);
+        usuario.setIsDuocUser(false);
     }
 
     @Test
@@ -145,6 +146,77 @@ class UsuarioServiceTest {
         when(usuarioRepository.findById(1L)).thenReturn(Optional.empty());
 
         
+        assertThrows(IllegalArgumentException.class, () -> usuarioService.actualizarUsuario(1L, updateDto));
+        verify(usuarioRepository, never()).save(any());
+    }
+
+    @Test
+    void actualizarUsuario_correoNoDuoc_desmarcaBandera() {
+        usuario.setCorreo("usuario@duoc.cl");
+        usuario.setIsDuocUser(true);
+        UsuarioUpdateDTO updateDto = UsuarioUpdateDTO.builder()
+                .correo("nuevo@gmail.com")
+                .build();
+
+        when(usuarioRepository.findById(1L)).thenReturn(Optional.of(usuario));
+        when(usuarioRepository.findByCorreo("nuevo@gmail.com")).thenReturn(Optional.empty());
+        when(usuarioRepository.save(any(Usuario.class))).thenReturn(usuario);
+        when(puntosService.obtenerPuntosPorUsuario(1L)).thenReturn(new PuntosDTO(1L, 150));
+
+        UsuarioRespuestaDTO result = usuarioService.actualizarUsuario(1L, updateDto);
+
+        assertThat(result.getCorreo()).isEqualTo("nuevo@gmail.com");
+        ArgumentCaptor<Usuario> captor = ArgumentCaptor.forClass(Usuario.class);
+        verify(usuarioRepository).save(captor.capture());
+        Usuario saved = captor.getValue();
+        assertThat(saved.getIsDuocUser()).isFalse();
+    }
+
+    @Test
+    void actualizarUsuario_conCorreoValido_normalizaYMarcaDuoc() {
+        UsuarioUpdateDTO updateDto = UsuarioUpdateDTO.builder()
+                .correo(" Nuevo@Duoc.cl ")
+                .build();
+
+        when(usuarioRepository.findById(1L)).thenReturn(Optional.of(usuario));
+        when(usuarioRepository.findByCorreo("nuevo@duoc.cl")).thenReturn(Optional.empty());
+        when(usuarioRepository.save(any(Usuario.class))).thenReturn(usuario);
+        when(puntosService.obtenerPuntosPorUsuario(1L)).thenReturn(new PuntosDTO(1L, 200));
+
+        UsuarioRespuestaDTO result = usuarioService.actualizarUsuario(1L, updateDto);
+
+        assertThat(result.getCorreo()).isEqualTo("nuevo@duoc.cl");
+        ArgumentCaptor<Usuario> captor = ArgumentCaptor.forClass(Usuario.class);
+        verify(usuarioRepository).save(captor.capture());
+        Usuario saved = captor.getValue();
+        assertThat(saved.getCorreo()).isEqualTo("nuevo@duoc.cl");
+        assertThat(saved.getIsDuocUser()).isTrue();
+    }
+
+    @Test
+    void actualizarUsuario_correoDuplicado_lanzaExcepcion() {
+        UsuarioUpdateDTO updateDto = UsuarioUpdateDTO.builder()
+                .correo("nuevo@gmail.com")
+                .build();
+
+        Usuario existente = new Usuario();
+        existente.setId(2L);
+
+        when(usuarioRepository.findById(1L)).thenReturn(Optional.of(usuario));
+        when(usuarioRepository.findByCorreo("nuevo@gmail.com")).thenReturn(Optional.of(existente));
+
+        assertThrows(UserAlreadyExistsException.class, () -> usuarioService.actualizarUsuario(1L, updateDto));
+        verify(usuarioRepository, never()).save(any());
+    }
+
+    @Test
+    void actualizarUsuario_correoVacio_lanzaExcepcion() {
+        UsuarioUpdateDTO updateDto = UsuarioUpdateDTO.builder()
+                .correo("   ")
+                .build();
+
+        when(usuarioRepository.findById(1L)).thenReturn(Optional.of(usuario));
+
         assertThrows(IllegalArgumentException.class, () -> usuarioService.actualizarUsuario(1L, updateDto));
         verify(usuarioRepository, never()).save(any());
     }

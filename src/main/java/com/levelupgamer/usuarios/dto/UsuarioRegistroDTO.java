@@ -33,7 +33,7 @@ public class UsuarioRegistroDTO {
     @NotBlank(message = "El correo no puede estar vacío")
     @Email(message = "El formato del correo no es válido")
     @Size(max = 100, message = "El correo no puede tener más de 100 caracteres")
-    @AllowedEmailDomain(domains = {"gmail.com", "hotmail.com", "outlook.com", "yahoo.com", "duoc.cl", "profesor.duoc.cl"})
+    @AllowedEmailDomain(domains = {"gmail.com", "duoc.cl", "profesor.duoc.cl", "duocuc.cl"})
     private String correo;
 
     @NotBlank(message = "La contraseña no puede estar vacía")
